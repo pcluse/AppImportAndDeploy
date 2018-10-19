@@ -7,7 +7,7 @@ $Global:Config = @{}
 ## Path where applications are stored
 ## This should contain folders with the name of the application
 ## and subfolders with version numbers
-$Config['AppPath'] = '\\src.pc.lu.se\file$\Applikationer'
+$Config['AppPath'] = '\\server.domain.domain\share$\applicationfolder'
 
 ## Default install and uninstall command line
 $Config['InstallCommandline']  = 'Deploy-Application.exe -DeploymentType "Install"'
