@@ -1,0 +1,9 @@
+<ActionDescription Class="Executable" DisplayName="PLS App Import" MnemonicDisplayName="PLS App Import" Description="PLS App Import">
+    <ShowOn>
+        <string>DefaultHomeTab</string>
+    </ShowOn>
+    <Executable>
+        <FilePath>C:\Program Files\PLS\SilentPowershell\SilentPowershell.exe</FilePath>
+        <Parameters>-noprofile -noninteractive -nologo -noexit -executionpolicy bypass -file "C:\Program Files\PLS\AppImportAndDeploy\AppImport.ps1"</Parameters>
+    </Executable>
+</ActionDescription>

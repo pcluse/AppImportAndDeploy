@@ -1,0 +1,46 @@
+<ActionDescription Class="Group" DisplayName="PLS Deploy" Description="Deploy application to special collections">
+	<ShowOn>
+		<string>ContextMenu</string>
+	</ShowOn>
+    <ActionGroups>
+
+        <ActionDescription Class="Executable" DisplayName="Alla tillgängliga" MnemonicDisplayName="Alla tillgängliga" Description="Alla tillgängliga" SelectionMode="Single">
+            <ShowOn>
+                <string>ContextMenu</string>
+            </ShowOn>
+            <Executable>
+                <FilePath>C:\Program Files\PLS\SilentPowershell\SilentPowershell.exe</FilePath>
+                <Parameters>-noprofile -noninteractive -nologo -noexit -executionpolicy bypass -file "C:\Program Files\PLS\AppImportAndDeploy\Deploy.ps1" -Available -ApplicationName "##SUB:LocalizedDisplayName##"</Parameters>
+            </Executable>
+        </ActionDescription>
+        
+        <ActionDescription Class="Executable" DisplayName="Alla tillgängliga (automatisk uppgradering)" MnemonicDisplayName="Alla tillgängliga (automatisk uppgradering)" Description="Alla tillgängliga (automatisk uppgradering)" SelectionMode="Single">
+            <ShowOn>
+                <string>ContextMenu</string>
+            </ShowOn>
+            <Executable>
+                <FilePath>C:\Program Files\PLS\SilentPowershell\SilentPowershell.exe</FilePath>
+                <Parameters>-noprofile -noninteractive -nologo -noexit -executionpolicy bypass -file "C:\Program Files\PLS\AppImportAndDeploy\Deploy.ps1" -Available -UpdateSupersedence -ApplicationName "##SUB:LocalizedDisplayName##"</Parameters>
+            </Executable>
+        </ActionDescription>
+
+        <ActionDescription Class="Executable" DisplayName="Tvingande" MnemonicDisplayName="Tvingande" Description="Tvingande" SelectionMode="Single">
+            <ShowOn>
+                <string>ContextMenu</string>
+            </ShowOn>
+            <Executable>
+                <FilePath>C:\Program Files\PLS\SilentPowershell\SilentPowershell.exe</FilePath>
+                <Parameters>-noprofile -noninteractive -nologo -noexit -executionpolicy bypass -file "C:\Program Files\PLS\AppImportAndDeploy\Deploy.ps1" -Required -UpdateSupersedence -ApplicationName "##SUB:LocalizedDisplayName##"</Parameters>
+            </Executable>
+        </ActionDescription>
+        <ActionDescription Class="Executable" DisplayName="Applikationstest" MnemonicDisplayName="Applikationstest" Description="Grupp för test av installation" SelectionMode="Single">
+            <ShowOn>
+                <string>ContextMenu</string>
+            </ShowOn>
+            <Executable>
+                <FilePath>C:\Program Files\PLS\SilentPowershell\SilentPowershell.exe</FilePath>
+                <Parameters>-noprofile -noninteractive -nologo -noexit -executionpolicy bypass -file "C:\Program Files\PLS\AppImportAndDeploy\Deploy.ps1" -Test -ApplicationName "##SUB:LocalizedDisplayName##"</Parameters>
+            </Executable>
+        </ActionDescription>
+    </ActionGroups>
+</ActionDescription>
