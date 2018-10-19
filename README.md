@@ -4,7 +4,7 @@ Programmet är ett tillägg till Config Manager som automatiserar två olika mom
 
 ## PLS AppImport
 
-![AppImport](images/app-list.png)
+![AppImport](Images/app-list.png)
 
 ## Använding
 
@@ -32,7 +32,7 @@ Om du kryssar i en application och trycker på knappen "Import selected applicat
 
 ### Fliken - App List
 
-![AppImport](images/log.png)
+![AppImport](Images/log.png)
 
 Här visas det information i två fält "Log" som visar vad programmet gör och "Todo" som är saker som måste kollas upp i efterhand. För varje importerad applikation så utförs följande steg
 
@@ -56,7 +56,7 @@ Här visas det information i två fält "Log" som visar vad programmet gör och 
 
 ## PLS Deploy
 
-![AppImport](images/deploy-menu.png)
+![AppImport](Images/deploy-menu.png)
 
 Om du högerklickar på en applikation i listan så kommer du längst ner i menyn
 se ett val PLS Deploy med en undermeny med fyra val
@@ -78,9 +78,3 @@ Applikationen kommer att installeras på alla datorer som finns med i samlingen 
 Krav för att kunna köra skriptet är:
     Minst Windows 10 1607 (det kan fungera på andra versioner)
     System Center Configuration Manager Console 1611
-
-
-
-Versioner
-
-1.0.0.4 - 2018-08-28 Nu klarar programmet av att kopiera alla möjliga detection rules från tidigare version (Om det finns två regler med OR emellan så kan den inte göra kopieringen)
