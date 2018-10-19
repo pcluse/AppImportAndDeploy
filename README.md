@@ -56,7 +56,7 @@ Här visas det information i två fält "Log" som visar vad programmet gör och 
 
 ## PLS Deploy
 
-![AppImport](Images/deploy-menu.png)
+![AppImport](Images/pls-deploy-menu.png)
 
 Om du högerklickar på en applikation i listan så kommer du längst ner i menyn
 se ett val PLS Deploy med en undermeny med fyra val
