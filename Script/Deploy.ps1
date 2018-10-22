@@ -47,6 +47,8 @@ $DebugPreference = "Continue"
 
 try {
     # Could not use the name "Alla datorer med SCCM-klienten i PC-domänen" because of ä
+    $Global:Config.WMINamespace = "root\sms\site_$(Get-WmiObject -ComputerName (Get-Config 'SCCMSiteServer') -Namespace 'root\sms' -Class SMS_ProviderLocation | Select-Object -ExpandProperty SiteCode)"
+
     $LimitingCollectionId = Get-Config 'LimitingCollectionId'
     $CheckPlaceHolderDetection = $false
 
@@ -132,10 +134,18 @@ If (-not $CMCollection) {
 }
 
 try {
-    $twoHoursAgo = [DateTime]::Now.Subtract([TimeSpan]::FromHours(2))
-    New-CMApplicationDeployment @Parameters `
+    $twoHoursAgo = ([DateTime]::Now).AddHours('-2')
+    $NewAppDeployment = New-CMApplicationDeployment @Parameters `
         -DeployAction Install -UserNotification DisplayAll `
-        -TimeBaseOn LocalTime -AvailableDateTime $twoHoursAgo - $twoHoursAgo | Out-Null
+        -TimeBaseOn LocalTime -AvailableDateTime $twoHoursAgo
+
+    
+    if ($NewAppDeployment -and $UpdateSupersedence.IsPresent) {
+        Get-WmiObject -Namespace $Global:Config.WMINamespace -ComputerName $Global:Config.SCCMSiteServer -Class SMS_ApplicationAssignment -Filter "ApplicationName = '$ApplicationName'" | % {
+            $_.UpdateDeadline = $twoHoursAgo.AddSeconds('50').ToString("yyyyMMddHHmmss.000000+***")
+            $_.Put()
+        }
+    }
 }
 catch {
     Show-Error $Error[0].ToString()
