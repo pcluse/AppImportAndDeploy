@@ -1,80 +1,85 @@
 # PLS AppImporter and Deploy
 
-Programmet är ett tillägg till Config Manager som automatiserar två olika moment. Dels att importera applikationer (framförallt skrivna i PSADT) och sen att deploya applikationer till olika samlingar.
+The application is an extension to Config Manager (SCCM) which automates two different tasks. Importing applications (mainly written i [PSADT](http://psappdeploytoolkit.com/)) and deploy applications to different collections.
 
 ## PLS AppImport
 
 ![AppImport](Images/app-list.png)
 
-## Använding
+## How to use
 
-När programmet startar så söker den igenom mappen \\src\file$\Applicationer och hittar alla applicationer som inte är importerade till SCCM. Strukturen på en application skall vara en mapp som är programmets namn och en undermapp som är aktuell version. Ex \\src\file$\Applicationer\MinFinaTestApp och undermappen \\src\file$\Applicationer\MinFinaTestApp\1.4. När sökningen är klar så kan man markera de applikationer som man vill installera.
+Then the application starts will it search thru a specified folder and find all applications not imported into SCCM. The file structure of an application should be a folder which is the applications name and subfolders which are different versions. For example:
 
-Här finns en gotcha. När du kryssar en applikation så är det inte den som blir markerad utan du måste även trycka på namnet för att se import-inställningarna för denna. 
+* \\server\appliction-sources
+    * MyApplication
+        * icon.png (or .jpg or .ico)
+        * 1.0
+        * 1.1
 
+Then the search is finsished can you select the applications you want to import. Here is a little "cotcha" selecting an application doesn't show the import settings for that. You have to click on the name to get the settings for the particular application.
 
-För importen så finns det följande alternativ
+The import have these settings
 
 * Install commandline -
-Vilket kommando skall köras vid installation. Behöver inte ändras om du använder PSADT
+Which command to run on installation. Usually you don't have to change this if you use PSADT
 * Uninstall commandline -
-Vilket kommando skall köras vid avinstallation. Behöver inte ändras om du använder PSADT
+Which command to run on uninstallation. Usually you don't have to change this if you use PSADT
 * Skip creating detectionmethod -
-Programmet försöker inte skapa detection från tidigare versioner eller från MSI-filer utan skapar bara en platshållar-regel
+The import doesn't try to create detection rules from previous version or from MSI-files and just creates a placeholder rule
 * Uninstall previous version (just not replace) - 
-Om importen hittar en äldre version så skapas en superseedence-regel. Om man vill att vid installation av denna version så skall avinstallationen på den gamla versionen köras först. Många program kan installeras över en äldre version men om inte så kryssa i denna.
+If the import finds an earlier version will it create a superseedence rule. If you want the installation of this version to first uninstall the previous version.
+Many applications can be installed over an older version but if not check this setting.
 * Should Deploy to 'Applicationstest' - 
-Vid importen så deployas applikationen till 'Applikationstest' som är en samling där man kan lägga in sina test-datorer.
-** Automatically update superseded -
-Om en tidigare version av applikationen är installerad på en dator i Applikationstest så kommer den automatisk uppdateras. Annars måste användaren uppdatera via Software Center
+Should the application be deployed to the test collection (which is specified in Config.ps1)
+** Automatically update superseded - 
+If an earlier version is installed on a computer in the test collection should it automatically be updated. Otherwise must the user update it within Software Center.
 
-Om du kryssar i en application och trycker på knappen "Import selected applications" så startar importen och programmet växla till...
+After checking applications and pressing "Import selected applications" will the import start and the application switches to...
 
-### Fliken - App List
+### Tab - App List
 
 ![AppImport](Images/log.png)
 
-Här visas det information i två fält "Log" som visar vad programmet gör och "Todo" som är saker som måste kollas upp i efterhand. För varje importerad applikation så utförs följande steg
+This shows information in two fields: "Log" shows what the application does and "Todo" shows things you must check up by hand. For every imported applications will these steps be executed:
 
-1. Letar efter tidigare eller nyare versioner av applikationen. Om den hittar en **nyare** version så får man en varning i "Todo"
-1. Skapar applikationen. Importerar ikon om det finns en fil som heter icon.jpg, icon.png eller icon.ico i programmets mapp. Om ikonen är större än 250x250 så varnar den
-1. Skapar en Skriptinstallation
-1. Skapar detection rules (se nedan)
-1. Om det finns en tidigare version så kopierar den dependencies från denna
-1. Om det finns en tidigare version så skapas en supersede mot denna
-1. Distrubierar applikationen till alla distributionspunkterna
-1. Deployar den till Applikationstest om man valt detta
+1. Find older and newer versions of the application. If a **newer** version is found will you get a warning in "Todo".
+1. Creates the application. Import icon if a file icon.jpg (.png or .ico) exists in the applications folder. If icon is bigger than 250x250 will it warn.
+1. Create a script installation.
+1. Create detection rules (se below)
+1. If an older version exists is the dependencies copied frpm that version.
+1. If an older version exists is a superseedence rule created.
+1. The application is distributed to the distribution group specified in Config.ps1.
+1. Deploy the appliction to the test collection if this is specified.
 
 ### Detection-rules
 
-* Om mappen files i programmappen (ex: \\src\file$\Applicationer\MinFinaTestApp\1.4\files) innehåller MSI-filer så skapas en regel för varje där Produkt-nyckel och version testas. Om installationen innehåller MSP-filer så kan denna ändras och man kan behöva ändra version.
-* Om DeployApplication.ps1 innehåller Add-SCCMDetection så skapas en regel för det registervärdet som den skriver
-* Om versionen av programmet är i formen x.x.x och tidigare version innehåller en regel för fil med version mellan x.x.x.0 och x.x.x.99999 så kopieras den regeln men ersätts med det nya programmets version. Praktiskt då versionen som ett program har är x.x.x (ex 2.1.4) men sen har exe-filen en version som även innehåller ett byggnummer (ex 2.1.4.6778)
-* Om version av programmet är i formen x.x.x.x och tidigare version har en regel för fil med version så kopieras den regeln men den aktuella versionen sätts.
-* Övriga regler för register, filer och mappar kopieras och om de innehåller x.x där x är ett nummer så skrivs en varning ut i Todo att det kan vara en sökväg med ett versionnummer i så man skall dubbelkolla detta.
-
+* If the folder fils in the application version folder (for example: \\server\application-sources\MyApplication\1.1\files) contains MSI-files will one rule be generated
+for each file on Product key and version number. If the appliction contains MSP-files may the version be different and these rules must be updated.
+* If DeployApplication.ps1 contains Add-SCCMDetection (an extension to PSADT we created) will a rule for the registry value this function writes be generated.
+* If the version of the application has the form x.x.x and previous version contains a rule for file with version between x.x.x.0 and x.x.x.99999 will the rule be copied
+but replaced with the current version. Practical then version is x.x.x (for example 2.1.4) but the exe file contains a build number (for example 2.1.4.6778).
+* If version is in the form x.x.x.x and previous application has a rule on file version in the form x.x.x.x will it be copied but replaced with current version.
+* All other rules for registry, files and folders will be copied and if the contain x.x where x is digits will a warning be written in Todo in case it is an version specifik path or value.
 
 ## PLS Deploy
 
 ![AppImport](Images/pls-deploy-menu.png)
 
-Om du högerklickar på en applikation i listan så kommer du längst ner i menyn
-se ett val PLS Deploy med en undermeny med fyra val
+If you right-click on an appliction in SCCM will you see PLS Deploy with four choices at the end of the menu.
 
 * Alla tillgängliga
-* Alla tillgängliga (automatisk uppgradering)
+* Alla tillgängliga (automatisk uppgradering) 
 * Tvingande
 * Applikationstest
 
 ### Alla tillgängliga
-Applikationen kommer att finnas för installation i Software Center
+All available (collection in Config.ps1) which is for for application which is optional and available in Software Center.
 
 ### Alla tillgängliga (automatisk uppgradering)
-Applikationen kommer finnas i Software Center och på de datorer som har den tidigare version installerad så kommer den uppgradera.
+Same as above but with automatic upgrade of installed versions.
 
 ### Tvingande
-Applikationen kommer att installeras på alla datorer som finns med i samlingen Tvingad/Programnamn (ex om Applikationen heter MinFinaApp v1.4 så kommer alla samlingar i Tvingad / MinFinaApp att få programmet installerat). Om samlingen inte finns så skapas den.
+Application will be installed on all computers which are members of the collection Tvingad/Application name. For example MyApplication v1.4 will be deployed to the collection "Tvingad / MyApplication". If the collection don't exist it is created.
 
-Krav för att kunna köra skriptet är:
-    Minst Windows 10 1607 (det kan fungera på andra versioner)
-    System Center Configuration Manager Console 1611
+### Applikationstest
+Collection for testing applications.
