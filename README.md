@@ -36,7 +36,7 @@ If an earlier version is installed on a computer in the test collection should i
 
 After checking applications and pressing "Import selected applications" will the import start and the application switches to...
 
-### Tab - App List
+### Logs
 
 ![AppImport](Images/log.png)
 
@@ -51,7 +51,7 @@ This shows information in two fields: "Log" shows what the application does and 
 1. The application is distributed to the distribution group specified in Config.ps1.
 1. Deploy the appliction to the test collection if this is specified.
 
-### Detection-rules
+#### Detection-rules
 
 * If the folder fils in the application version folder (for example: \\server\application-sources\MyApplication\1.1\files) contains MSI-files will one rule be generated
 for each file on Product key and version number. If the appliction contains MSP-files may the version be different and these rules must be updated.
