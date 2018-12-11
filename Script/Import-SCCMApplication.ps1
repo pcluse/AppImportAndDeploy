@@ -162,8 +162,8 @@ function Global:Import-SCCMApplication {
     }
     Else {
         $w,$h = Get-ImageSize $AppInfo.IconPath
-        If ($w -gt 250 -or $h -gt 250) {
-            Write-Todolog -syncHash $syncHash -Text "$($ImportApplication.AppName): Icon file too large $($w)x$($h) (max is 250x250)"
+        If ($w -gt 512 -or $h -gt 512) {
+            Write-Todolog -syncHash $syncHash -Text "$($ImportApplication.AppName): Icon file too large $($w)x$($h) (max is 512x512)"
             $AppInfo.IconPath = $null
         }
     }
