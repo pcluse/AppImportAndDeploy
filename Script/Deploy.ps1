@@ -152,6 +152,10 @@ catch {
     Return
 }
 
+if ($Parameters.CollectionName -ne (Get-Config 'TestCollection')) {
+    Get-CMDeployment -CollectionName (Get-Config 'TestCollection')  -FeatureType Application -SoftwareName $Parameters.Name | Remove-CMDeployment -Force
+}
+
 $Message = "$ApplicationName deployed as $($Parameters['DeployPurpose']) to $($Parameters['CollectionName'])"
 If ($CMCollection.MemberCount -eq 0) {
     $Message += "`n`nNotice: Collection has no members"
