@@ -73,7 +73,7 @@ try {
     elseif ($Required.IsPresent) {
         if (-not ($ApplicationName -match "^(.*) v\d+(\.\d+)*$")) {
             Show-Error "Application name don't match XXXX v9... structure. Deploy stopped"
-            return
+            break
         }
         $Parameters.Add('CollectionName',$Matches[1])
         $Parameters.Add('DeployPurpose','Required')
@@ -84,12 +84,12 @@ try {
     }
     else {
         Show-Error "Deploy type not given -Test, -Available or -Required"
-        return
+        break
     }
 } Catch {
     $Error[0] | Out-Host
     Show-Error -Message $Error[0].ToString()
-    Return
+    break
 }
 
 Set-CMLocation
@@ -100,7 +100,7 @@ If ($CheckPlaceHolderDetection) {
         Get-DetectionRules -ApplicationName $ApplicationName | ForEach-Object {
             If ($_.Type -eq "File" -and $_.Path -eq "C:\Program Files" -and $_.FileName -eq "XXX") {
                 Show-Error "Placeholder rule detected. Deploy stopped"
-                return
+                break
             }
         }
     }
@@ -124,12 +124,12 @@ If (-not $CMCollection) {
         }
         catch {
             Show-Error $Error[0].ToString()
-            Return
+            break
         }
     }
     Else {
         Show-Error "Collection $CollectionName don't exist. Deploy stopped"
-        return 
+        break 
     }
 }
 
@@ -149,7 +149,7 @@ try {
 }
 catch {
     Show-Error $Error[0].ToString()
-    Return
+    break
 }
 
 if ($Parameters.CollectionName -ne (Get-Config 'TestCollection')) {
