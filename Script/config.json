@@ -1,0 +1,19 @@
+﻿{
+    "SCCMSiteServer":  "",
+    "AppPath":  "",
+    "DefaultInstallCommandLine":  "Deploy-Application.exe -DeploymentType \"Install\"",
+    "DefaultUninstallCommandLine":  "Deploy-Application.exe -DeploymentType \"Uninstall\"",
+    "LogPath":  "",
+    "WorkLog":  "AppImport-Work.log",
+    "TodoLog":  "AppImport-todo.log",
+    "DistributionpointGroup":  "Alla distributionspunkter",
+    "TestCollectionID":  "CCM00000",
+    "AllOptionalCollectionID":  "CCM00000",
+    "LimitingCollectionID":  "CCM000000",
+    "RequiredCollectionFolder":  ".\\DeviceCollection\\Applikation\\Tvingad",
+    "DeployToTestCollection":  true,
+    "UpdateSupersedence":  true,
+    "UpdateDependencies":  false,
+    "OnlyDefaultDetectionRule":  false,
+    "DryRun":  false
+}
