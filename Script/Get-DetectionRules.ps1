@@ -47,9 +47,18 @@ function Global:Get-DetectionRules {
         throw "Wrong number of deployment types = $dtCount"           
     }
 
-    If ($dt.SDMPackageXML -eq '') {
-        # Hmmm??? W3D3 Excel 2013 Addin v5.3.1 had this one empty
+    If ($dt.Technology -ne 'Script') {
         throw "Not a script installer"
+    }
+
+    If ($dt.SDMPackageXML -eq '') {
+        # Fix for bug where SDMPackageXML is empty
+        # https://thedesktopteam.com/raphael/sccm-2012-deploymenttype-empty-sdmpackagexml/
+        $dt | Set-CMDeploymentType -AdministratorComment " "
+        $dt = Get-CMDeploymentType -ApplicationName $ApplicationName
+        If ($dt.SDMPackageXML -eq '') {
+            throw "Couldn't get SDMPackageXML from deploymenttype. Contact admin"
+        }
     }
 
     $xmlDeploymentType = [xml]$dt.SDMPackageXML
