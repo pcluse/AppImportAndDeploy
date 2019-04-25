@@ -49,6 +49,12 @@ $Global:Config = @{
     ## Should program just do a dry-run and not really import the applications
     ## Used only for testing purposes
     DryRun = $false
+
+    ## Should info on imported applications be posted on teams
+    TeamsPostImport = $true
+    TeamsChannelName = "Name of teams channel"
+    TeamsChannelUrl = 'https://outlook.office.com/webhook/..........and more'
+    
 }
 
 ## Function to get a configuration by key or throw if it don't exist

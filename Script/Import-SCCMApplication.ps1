@@ -30,6 +30,7 @@
         AppName              : MyFineTestApp v1.4
         InstallCommandline   : Deploy-Application.exe -DeploymentType "Install"
         UninstallCommandline : Deploy-Application.exe -DeploymentType "Uninstall"
+        TeamsPostImport      : True
 
     
     1) Ceates an application with name $ImportApplication.AppName and version $AppInfo.Version
@@ -46,7 +47,8 @@
         All other rules are copied from old version
     4) Add supersedence if older version found. Make previous version unistall if $ImportApplication.UninstallPrevious is true.
     5) Distribute Application to Distribution Group
-    6) Deploy it to a test collection if $ImportApplication is true
+    6) Deploy it to a test collection if $ImportApplication.DeployToTest is true
+    7) Post the import to a teams channel if $ImportApplication.TeamsPostImport is true
 #>
 
 
@@ -441,5 +443,43 @@ function Global:Import-SCCMApplication {
             }
         }
     }
+
+    # Post on teams
+    If ($ImportApplication.TeamsPostImport) {
+        If ($CMPreviousApplication) {
+            $SuperseededApplication = $CMPreviousApplication.LocalizedDisplayName
+        }
+        Else {
+            $SuperseededApplication = "--"
+        }
+
+        $body = ConvertTo-Json -Depth 4 @{
+            title = "$($ImportApplication.AppName) imported"
+            text = "A new application was imported"
+            sections = @(
+                @{
+                    title = 'Details'
+                    facts = @(
+                        @{
+                        name = 'Superseeds'
+                        value = $SuperseededApplication
+                        },
+                        @{
+                        name = 'Who'
+                        value = "$($env:USERDOMAIN)\$($env:USERNAME)"
+                        }
+                    )
+                }
+            )
+        }
+        try {
+            Invoke-RestMethod -uri (Get-Config 'TeamsChannelUrl') -Method Post -body $body -ContentType 'application/json'
+            Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Posted on Teams channel $($syncHash.TeamsChannelName)"
+        }
+        catch {
+            Write-Todolog -syncHash $syncHash -Text "$($ImportApplication.AppName): Couldn't post on Teams channel $($syncHash.TeamsChannelName)"
+        }
+    }
+
     return $true # Success
 }
