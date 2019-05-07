@@ -56,6 +56,8 @@ try {
     $syncHash.AppTestCollection = Get-Config 'TestCollection'
     $syncHash.DefaultInstallCommandline = Get-Config 'InstallCommandline'
     $syncHash.DefaultUninstallCommandline = Get-Config 'UninstallCommandline'
+    $syncHash.TeamsChannelName = Get-Config 'TeamsChannelName'
+    $syncHash.DefaultTeamsPostImport = Get-Config 'TeamsPostImport'
     $syncHash.DryRun = Get-Config 'DryRun'
     $syncHash.Version = $Version
 } catch {
@@ -80,6 +82,7 @@ $psCmd = [PowerShell]::Create().AddScript({
     
     $syncHash.Window.Title = "AppImport v$($syncHash.Version)"
     $syncHash.cbShouldDeployToTestCollection.Content = "Should Deploy to '$($syncHash.AppTestCollection)'"
+    $syncHash.lTeamsChannelName.Content = $syncHash.TeamsChannelName
     # Set source of list
     $syncHash.lvSelectedApps.ItemsSource = $syncHash.appsToImport
 
@@ -133,6 +136,7 @@ Get-NotImporteredApplications -ApplicationFolder $syncHash.AppPath | ForEach-Obj
     $obj | Add-Member AppName $_.NameAndVersion
     $obj | Add-Member InstallCommandline $syncHash.DefaultInstallCommandline
     $obj | Add-Member UninstallCommandline $syncHash.DefaultUninstallCommandline
+    $obj | Add-Member TeamsPostImport $syncHash.DefaultTeamsPostImport
 
     Add-ApplicationToList -syncHash $syncHash -Object $obj
 }

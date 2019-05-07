@@ -62,6 +62,7 @@ try {
         $Parameters.Add('CollectionName', (Get-Config 'TestCollection'))
     
         $CreateCollection = $false
+        $NeedRefreshSchedule = $true
     }
     elseif ($Available.IsPresent) {
         $Parameters.Add('CollectionName',(Get-Config 'AllOptionalCollection'))
@@ -69,6 +70,7 @@ try {
         
         $CreateCollection = $false
         $CheckPlaceHolderDetection = $true
+        $NeedRefreshSchedule = $true
     }
     elseif ($Required.IsPresent) {
         if (-not ($ApplicationName -match "^(.*) v\d+(\.\d+)*$")) {
@@ -81,6 +83,7 @@ try {
         $CreateCollection = $true
         $FolderPath = Get-Config 'RequiredCollectionFolder'
         $CheckPlaceHolderDetection = $true
+        $NeedRefreshSchedule = $false
     }
     else {
         Show-Error "Deploy type not given -Test, -Available or -Required"
@@ -118,8 +121,14 @@ $CMCollection = Get-CMDeviceCollection -Name $Parameters.CollectionName -ErrorAc
 If (-not $CMCollection) {
     If ($CreateCollection) {
         try {
-            $RefreshSchedule = New-CMSchedule -Start ([DateTime]::Now) -RecurInterval Days -RecurCount 7
-            $CMCollection = New-CMDeviceCollection -LimitingCollectionId $LimitingCollectionId -Name $Parameters.CollectionName -RefreshSchedule $RefreshSchedule -RefreshType Both
+            if ($NeedRefreshSchedule) {
+                $RefreshSchedule = New-CMSchedule -Start ([DateTime]::Now) -RecurInterval Days -RecurCount 7
+                $CMCollection = New-CMDeviceCollection -LimitingCollectionId $LimitingCollectionId -Name $Parameters.CollectionName -RefreshSchedule $RefreshSchedule -RefreshType Both
+            } else {
+                $CMCollection = New-CMDeviceCollection -LimitingCollectionId $LimitingCollectionId -Name $Parameters.CollectionName -RefreshType None
+            }
+            
+            
             Move-CMObject -FolderPath $FolderPath -InputObject $CMCollection
         }
         catch {
