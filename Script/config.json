@@ -15,5 +15,8 @@
     "UpdateSupersedence":  true,
     "UpdateDependencies":  false,
     "OnlyDefaultDetectionRule":  false,
-    "DryRun":  false
+    "DryRun":  false,
+    "TeamsPostImport": false,
+    "TeamsChannelName": "",
+    "TeamsChannelUrl": ""
 }
