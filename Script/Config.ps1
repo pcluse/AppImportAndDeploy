@@ -42,6 +42,9 @@ function Global:Set-Config {
     If (($Config | Get-Member -Name $key)) {
         $Config."$key" = $value
     }
+    else {
+        $Config | Add-Member $key $value
+    }
     Save-ConfigurationData
 }
 

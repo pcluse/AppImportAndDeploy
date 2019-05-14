@@ -427,18 +427,18 @@ function Global:Import-SCCMApplication {
 
     # Deploy
     if ($ImportApplication.DeployToTest) {      
-        Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Deployed to '$($syncHash.AppTestCollection)'"
+        Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Deployed to '$($syncHash.AppTestCollectionID)'"
         if (-not $syncHash.DryRun) {
             try {
             
-                New-CMApplicationDeployment -Name $ImportApplication.AppName -CollectionName $syncHash.AppTestCollection `
+                New-CMApplicationDeployment -Name $ImportApplication.AppName -CollectionID $syncHash.AppTestCollectionID `
                     -DeployAction Install -DeployPurpose Available -UserNotification DisplayAll `
                     -UpdateSupersedence $ImportApplication.UpdateSupersedence `
                     -TimeBaseOn LocalTime -AvailableDateTime (Get-Date) | Out-Null
             }
             catch {
                 $Error[0] | Out-Host
-                Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Error deploying to $($syncHash.AppTestCollection)"
+                Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Error deploying to $($syncHash.AppTestCollectionID)"
                 return $true
             }
         }

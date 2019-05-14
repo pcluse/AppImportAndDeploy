@@ -47,7 +47,8 @@ $DebugPreference = "Continue"
 
 try {
     # Could not use the name "Alla datorer med SCCM-klienten i PC-domänen" because of ä
-    $Global:Config | Add-Member WMINamespace "root\sms\site_$(Get-WmiObject -ComputerName (Get-Config 'SCCMSiteServer') -Namespace 'root\sms' -Class SMS_ProviderLocation | Select-Object -ExpandProperty SiteCode)"
+    #$Global:Config | Add-Member WMINamespace "root\sms\site_$(Get-WmiObject -ComputerName (Get-Config 'SCCMSiteServer') -Namespace 'root\sms' -Class SMS_ProviderLocation | Select-Object -ExpandProperty SiteCode)"
+    Global:Set-Config -key 'WMINamespace' "root\sms\site_$(Get-WmiObject -ComputerName (Get-Config 'SCCMSiteServer') -Namespace 'root\sms' -Class SMS_ProviderLocation | Select-Object -ExpandProperty SiteCode)"
 
     $LimitingCollectionId = Get-Config 'LimitingCollectionId'
     $CheckPlaceHolderDetection = $false
@@ -59,13 +60,13 @@ try {
 
     if ($Test.IsPresent) {
         $Parameters.Add('DeployPurpose','Available')
-        $Parameters.Add('CollectionName', (Get-Config 'TestCollection'))
+        $Parameters.Add('CollectionID', (Get-Config 'TestCollectionID'))
     
         $CreateCollection = $false
         $NeedRefreshSchedule = $true
     }
     elseif ($Available.IsPresent) {
-        $Parameters.Add('CollectionName',(Get-Config 'AllOptionalCollection'))
+        $Parameters.Add('CollectionID',(Get-Config 'AllOptionalCollectionID'))
         $Parameters.Add('DeployPurpose','Available')
         
         $CreateCollection = $false
@@ -77,7 +78,7 @@ try {
             Show-Error "Application name don't match XXXX v9... structure. Deploy stopped"
             break
         }
-        $Parameters.Add('CollectionName',$Matches[1])
+        $Parameters.Add('CollectionID',(Get-CMDeviceCollection -CollectionName $Matches[1]).CollectionID)
         $Parameters.Add('DeployPurpose','Required')
         
         $CreateCollection = $true
@@ -114,18 +115,18 @@ If ($CheckPlaceHolderDetection) {
 
 # Check if collection exists and create it if must
 if ($Force.IsPresent) {
-    Remove-CMDeviceCollection -Name $Parameters.CollectionName -ErrorAction SilentlyContinue
+    Remove-CMDeviceCollection -CollectionID $Parameters.CollectionID -ErrorAction SilentlyContinue
 }
 
-$CMCollection = Get-CMDeviceCollection -Name $Parameters.CollectionName -ErrorAction SilentlyContinue
+$CMCollection = Get-CMDeviceCollection -CollectionID $Parameters.CollectionID -ErrorAction SilentlyContinue
 If (-not $CMCollection) {
     If ($CreateCollection) {
         try {
             if ($NeedRefreshSchedule) {
                 $RefreshSchedule = New-CMSchedule -Start ([DateTime]::Now) -RecurInterval Days -RecurCount 7
-                $CMCollection = New-CMDeviceCollection -LimitingCollectionId $LimitingCollectionId -Name $Parameters.CollectionName -RefreshSchedule $RefreshSchedule -RefreshType Both
+                $CMCollection = New-CMDeviceCollection -LimitingCollectionId $LimitingCollectionId -CollectionID $Parameters.CollectionID -RefreshSchedule $RefreshSchedule -RefreshType Both
             } else {
-                $CMCollection = New-CMDeviceCollection -LimitingCollectionId $LimitingCollectionId -Name $Parameters.CollectionName -RefreshType None
+                $CMCollection = New-CMDeviceCollection -LimitingCollectionId $LimitingCollectionId -CollectionID $Parameters.CollectionID -RefreshType None
             }
             
             
@@ -137,7 +138,7 @@ If (-not $CMCollection) {
         }
     }
     Else {
-        Show-Error "Collection $CollectionName don't exist. Deploy stopped"
+        Show-Error "Collection $($Parameters.CollectionID) don't exist. Deploy stopped"
         break 
     }
 }
@@ -150,7 +151,7 @@ try {
 
     
     if ($NewAppDeployment -and $UpdateSupersedence.IsPresent) {
-        Get-WmiObject -Namespace $Global:Config.WMINamespace -ComputerName $Global:Config.SCCMSiteServer -Class SMS_ApplicationAssignment -Filter "ApplicationName = '$ApplicationName'" | % {
+        Get-WmiObject -Namespace Get-config 'WMINamespace' -ComputerName $Global:Config.SCCMSiteServer -Class SMS_ApplicationAssignment -Filter "ApplicationName = '$ApplicationName'" | % {
             $_.UpdateDeadline = $twoHoursAgo.AddSeconds('50').ToString("yyyyMMddHHmmss.000000+***")
             $_.Put()
         }
