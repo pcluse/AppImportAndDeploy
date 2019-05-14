@@ -66,7 +66,6 @@ try {
 }
 
 $psCmd = [PowerShell]::Create().AddScript({
-    Write-Host $syncHash.LogPath
     $WindowXAMLString = Get-Content $syncHash.XamlPath
     [xml]$WindowXAML = $WindowXAMLString -replace 'mc:Ignorable="d"','' -replace "x:N",'N' -replace 'x:Class="[a-zA-Z0-9\.]+"',''
     
