@@ -47,7 +47,7 @@ $DebugPreference = "Continue"
 
 try {
     # Could not use the name "Alla datorer med SCCM-klienten i PC-domänen" because of ä
-    $Global:Config.WMINamespace = "root\sms\site_$(Get-WmiObject -ComputerName (Get-Config 'SCCMSiteServer') -Namespace 'root\sms' -Class SMS_ProviderLocation | Select-Object -ExpandProperty SiteCode)"
+    $Global:Config | Add-Member WMINamespace "root\sms\site_$(Get-WmiObject -ComputerName (Get-Config 'SCCMSiteServer') -Namespace 'root\sms' -Class SMS_ProviderLocation | Select-Object -ExpandProperty SiteCode)"
 
     $LimitingCollectionId = Get-Config 'LimitingCollectionId'
     $CheckPlaceHolderDetection = $false

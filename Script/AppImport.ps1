@@ -9,7 +9,7 @@ $InstalledPath = $PSScriptRoot
 Write-Debug "Running from $InstalledPath"
 Get-ChildItem -File -Filter '*.ps1' -Path $InstalledPath | Where-Object { $_.Name -notin 'appimport.ps1','Deploy.ps1'} | ForEach-Object {
     Write-Debug "Loading $($_.Name)"
-    & "$($_.FullName)"
+    . "$($_.FullName)"
 }
 
 Add-Type –assemblyName PresentationFramework
@@ -27,7 +27,6 @@ Function Global:Show-Error($Message) {
         [System.Windows.Forms.MessageBoxIcon]::Error)
 }
 
-
 # A variable synchash is used to communicate between the main thread and
 # the thread the GUI is running on
 $syncHash = [hashtable]::Synchronized(@{})
@@ -40,9 +39,9 @@ $newRunspace.SessionStateProxy.SetVariable("syncHash",$syncHash)
 try { 
     $syncHash.appsToImport = New-Object System.Collections.ObjectModel.ObservableCollection[System.Object]
     $syncHash.XamlPath = "$PSScriptRoot\AppImport.xaml"
-    $syncHash.SettingsRegpath = "HKCU:\Software\PLS\AppImporter"
+    #$syncHash.SettingsRegpath = "HKCU:\Software\PLS\AppImporter"
     $syncHash.Host = $Host
-    $syncHash.LogPath = Get-Config 'LogPath'
+    $syncHash.LogPath = ([Environment]::ExpandEnvironmentVariables((Get-Config 'LogPath')))
     $syncHash.SI = 'ImportDoneEvent'
     $syncHash.AppPath = Get-Config 'AppPath'
     $syncHash.DefaultDeployToTestCollection = Get-Config 'DeployToTestCollection'
@@ -54,8 +53,8 @@ try {
     # $syncHash.SiteServer = 'sccm.pc.lu.se'
     $syncHash.DistributionPointGroup = Get-Config 'DistributionPointGroup'
     $syncHash.AppTestCollection = Get-Config 'TestCollection'
-    $syncHash.DefaultInstallCommandline = Get-Config 'InstallCommandline'
-    $syncHash.DefaultUninstallCommandline = Get-Config 'UninstallCommandline'
+    $syncHash.DefaultInstallCommandline = Get-Config 'DefaultInstallCommandline'
+    $syncHash.DefaultUninstallCommandline = Get-Config 'DefaultUninstallCommandline'
     $syncHash.TeamsChannelName = Get-Config 'TeamsChannelName'
     $syncHash.DefaultTeamsPostImport = Get-Config 'TeamsPostImport'
     $syncHash.DryRun = Get-Config 'DryRun'
@@ -67,6 +66,7 @@ try {
 }
 
 $psCmd = [PowerShell]::Create().AddScript({
+    Write-Host $syncHash.LogPath
     $WindowXAMLString = Get-Content $syncHash.XamlPath
     [xml]$WindowXAML = $WindowXAMLString -replace 'mc:Ignorable="d"','' -replace "x:N",'N' -replace 'x:Class="[a-zA-Z0-9\.]+"',''
     
@@ -168,7 +168,9 @@ While ($syncHash.Window.IsVisible) {
             Enable-ImportButton
         }
     }
-    
+    elseif ($Event.MessageData -eq 'closing') {
+        Save-ConfigurationData
+    }
 }
 
 # cleanup

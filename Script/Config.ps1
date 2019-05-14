@@ -17,11 +17,6 @@ function Read-ConfigurationData {
 }
 
 function Save-ConfigurationData {
-    param(
-        [Parameter(Mandatory=$true,
-                   ValueFromPipeline=$true)]
-        $ConfigurationData
-    )
     
     $Parameters = @{
         Encoding = 'UTF8'
@@ -29,14 +24,25 @@ function Save-ConfigurationData {
         FilePath = "$($env:APPDATA)\PLS\AppImporter\config.json"
         Force = $true
     }
-
-    $Parameters
     
     if (-not (Test-Path -Path $Parameters.FilePath)) {
         New-Item -ItemType Container -Path (Split-Path -Path $Parameters.FilePath -Parent) | Out-Null
     }
 
-    $ConfigurationData | ConvertTo-Json -Depth 10 | Out-File @Parameters
+    $Config | ConvertTo-Json -Depth 10 | Out-File @Parameters
+}
+
+function Global:Set-Config {
+    param(
+        [ValidateNotNullOrEmpty()]
+        [string]$key,
+        [ValidateNotNullOrEmpty()]
+        [string]$value
+    )
+    If (($Config | Get-Member -Name $key)) {
+        $Config."$key" = $value
+    }
+    Save-ConfigurationData
 }
 
 function Global:Get-Config {
@@ -50,3 +56,5 @@ function Global:Get-Config {
     }
     $Config.$key
 }
+
+$Config = Read-ConfigurationData
