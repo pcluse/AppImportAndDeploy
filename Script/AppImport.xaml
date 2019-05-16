@@ -43,10 +43,14 @@
                         <TextBox x:Name="tbInstallCommandline" TextWrapping="NoWrap" AcceptsReturn="False" Text="{Binding SelectedItem.InstallCommandline, ElementName=lvSelectedApps, Mode=TwoWay}" Margin="5,0" MinWidth="260"/>
                         <Label x:Name="lUninstallCommandline" Content="Uninstall commandline" VerticalAlignment="Top"/>
                         <TextBox x:Name="tbUninstallCommandline" TextWrapping="NoWrap" AcceptsReturn="False" Text="{Binding SelectedItem.UninstallCommandline, ElementName=lvSelectedApps, Mode=TwoWay}" Margin="5,0" MinWidth="260"/>
+                        <Label x:Name="lDestinationFolder" Content="Destination folder" VerticalAlignment="Top"/>
+                        <TextBox x:Name="tbDestinationFolder" TextWrapping="NoWrap" AcceptsReturn="False" Text="{Binding SelectedItem.DestinationFolder, ElementName=lvSelectedApps, Mode=TwoWay}" Margin="5,0" MinWidth="260"/>
                         <CheckBox x:Name="cbTeamsPostImport" Content="Post import on Teams channel" IsChecked="{Binding SelectedItem.TeamsPostImport, ElementName=lvSelectedApps, Mode=TwoWay}" Width="300" Height="15" Margin="5,5" HorizontalAlignment="Left"/>
                         <Label x:Name="lThisTeamsChannelName" Content="Channel name" Margin="25,0,5,0" VerticalAlignment="Top"/>
                         <CheckBox x:Name="cbSkipDetectionmethod" Content="Skip creating detectionmethod" IsChecked="{Binding SelectedItem.OnlyPlaceholderDetectionRule, ElementName=lvSelectedApps, Mode=TwoWay}" Width="300" Height="15" Margin="5,15" HorizontalAlignment="Left"/>
                         <CheckBox x:Name="cbUninstallPrevious" Content="Uninstall previous version (just not replace)" IsChecked="{Binding SelectedItem.UninstallPrevious, ElementName=lvSelectedApps, Mode=TwoWay}" Width="300" Height="15" Margin="5,15" HorizontalAlignment="Left"/>
+                        <CheckBox x:Name="cbUpdateDependencies" Content="Automatically update dependencies" Width="275"
+                                IsChecked="{Binding SelectedItem.UpdateDependencies, ElementName=lvSelectedApps, Mode=TwoWay}" Height="30" Margin="5,10,5,5" HorizontalAlignment="Left"/>
                         <CheckBox x:Name="cbShouldDeployToTestCollection" Content="Should Deploy to 'Applikationstest'" Width="300" IsChecked="{Binding SelectedItem.DeployToTestCollection, ElementName=lvSelectedApps, Mode=TwoWay}" Height="15" Margin="5,10,5,5" HorizontalAlignment="Left"/>
                         <CheckBox x:Name="cbUpdateSupersedence" Content="Automatically update superseded" Width="275"
                                 IsEnabled="{Binding SelectedItem.DeployToTestCollection, ElementName=lvSelectedApps, Mode=OneWay}"
@@ -85,6 +89,8 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -96,22 +102,26 @@
                     <CheckBox x:Name="cbDefaultOnlyPlaceholderDetectionRule" Content="Only create placeholder detection rule" Grid.Row="2" />
                     <CheckBox x:Name="cbDefaultUpdateDependencies" Content="Update dependencies by default" Grid.Row="3" />
                     <CheckBox x:Name="cbDefaultUpdateSupersedence" Content="Update supersedence by default" Grid.Row="4" />
-                    <Label x:Name="lSCCMSiteServer" Content="Siteserver FQDN" Grid.Row="5" />
-                    <TextBox x:Name="tbSCCMSiteServer" Grid.Row="5" Grid.Column="1" />
-                    <Label x:Name="lAppPath" Grid.Row="6" Content="Path to applicationshare" />
-                    <TextBox x:Name="tbAppPath" Grid.Row="6" Grid.Column="1" />
-                    <Label x:Name="lTeamsChannelName" Grid.Row="7" Content="Name of channel in teams" />
-                    <TextBox x:Name="tbTeamsChannelName" Grid.Row="7" Grid.Column="1" />
-                    <Label x:Name="lDefaultUninstallCommandline" Grid.Row="8" Content="Default uninstall commandline" />
-                    <TextBox x:Name="tbDefaultUninstallCommandline" Grid.Row="8" Grid.Column="1" />
-                    <Label x:Name="lDefaultInstallCommandline" Grid.Row="9" Content="Default install commandline" />
-                    <TextBox x:Name="tbDefaultInstallCommandline" Grid.Row="9" Grid.Column="1" />
-                    <Label x:Name="lAppTestCollectionID" Grid.Row="10" Content="Collection ID of app test" />
-                    <TextBox x:Name="tbAppTestCollectionID" Grid.Row="10" Grid.Column="1" />
-                    <Label x:Name="lDistributionPointGroup" Grid.Row="11" Content="Name of distributionpoint group" />
-                    <TextBox x:Name="tbDistributionPointGroup" Grid.Row="11" Grid.Column="1" />
-                    <CheckBox x:Name="cbDefaultUninstallPrevious" Content="Uninstall previous version by default" Grid.Row="12" />
-                    <CheckBox x:Name="cbDryRun" Content="Dry run" Grid.Row="13" />
+                    <CheckBox x:Name="cbDefaultUninstallPrevious" Content="Uninstall previous version by default" Grid.Row="5" />
+                    <CheckBox x:Name="cbDryRun" Content="Dry run" Grid.Row="6" />
+                    <Label x:Name="lSCCMSiteServer" Content="Siteserver FQDN" Grid.Row="7" />
+                    <TextBox x:Name="tbSCCMSiteServer" Grid.Row="7" Grid.Column="1" />
+                    <Label x:Name="lAppPath" Grid.Row="8" Content="Path to applicationshare" />
+                    <TextBox x:Name="tbAppPath" Grid.Row="8" Grid.Column="1" />
+                    <Label x:Name="lTeamsChannelName" Grid.Row="9" Content="Name of channel in teams" />
+                    <TextBox x:Name="tbTeamsChannelName" Grid.Row="9" Grid.Column="1" />
+                    <Label x:Name="lDefaultUninstallCommandline" Grid.Row="10" Content="Default uninstall commandline" />
+                    <TextBox x:Name="tbDefaultUninstallCommandline" Grid.Row="10" Grid.Column="1" />
+                    <Label x:Name="lDefaultInstallCommandline" Grid.Row="11" Content="Default install commandline" />
+                    <TextBox x:Name="tbDefaultInstallCommandline" Grid.Row="11" Grid.Column="1" />
+                    <Label x:Name="lAppTestCollectionID" Grid.Row="12" Content="Collection ID of app test" />
+                    <TextBox x:Name="tbAppTestCollectionID" Grid.Row="12" Grid.Column="1" />
+                    <Label x:Name="lDistributionPointGroup" Grid.Row="13" Content="Name of distributionpoint group" />
+                    <TextBox x:Name="tbDistributionPointGroup" Grid.Row="13" Grid.Column="1" />
+                    <Label x:Name="lDefaultDestinationFolder" Grid.Row="14" Content="Path to folder where applications end up" />
+                    <TextBox x:Name="tbDefaultDestinationFolder" Grid.Row="14" Grid.Column="1" />
+                    <Label x:Name="lRequiredCollectionFolder" Grid.Row="15" Content="Path to folder where required applicationscollections end up" />
+                    <TextBox x:Name="tbRequiredCollectionFolder" Grid.Row="15" Grid.Column="1" />
                 </Grid>
             </TabItem>
         </TabControl>
