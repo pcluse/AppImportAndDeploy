@@ -27,6 +27,8 @@ param (
     [switch]$Force
 )
 
+Push-Location
+
 [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms") | Out-Null
 
 Function Show-Error($Message) {
@@ -45,7 +47,9 @@ $DebugPreference = "Continue"
 . $PSScriptRoot\Set-CMLocation.ps1
 . $PSScriptRoot\Get-DetectionRules.ps1
 
+
 try {
+    Set-CMLocation
     # Could not use the name "Alla datorer med SCCM-klienten i PC-domänen" because of ä
     #$Global:Config | Add-Member WMINamespace "root\sms\site_$(Get-WmiObject -ComputerName (Get-Config 'SCCMSiteServer') -Namespace 'root\sms' -Class SMS_ProviderLocation | Select-Object -ExpandProperty SiteCode)"
     Global:Set-Config -key 'WMINamespace' "root\sms\site_$(Get-WmiObject -ComputerName (Get-Config 'SCCMSiteServer') -Namespace 'root\sms' -Class SMS_ProviderLocation | Select-Object -ExpandProperty SiteCode)"
@@ -78,7 +82,8 @@ try {
             Show-Error "Application name don't match XXXX v9... structure. Deploy stopped"
             break
         }
-        $Parameters.Add('CollectionID',(Get-CMDeviceCollection -CollectionName $Matches[1]).CollectionID)
+        $Parameters.Add('CollectionName',$Matches[1])
+        $Parameters.Add('CollectionID',(Get-CMDeviceCollection -ErrorAction SilentlyContinue -Name $Matches[1]).CollectionID)
         $Parameters.Add('DeployPurpose','Required')
         
         $CreateCollection = $true
@@ -95,8 +100,6 @@ try {
     Show-Error -Message $Error[0].ToString()
     break
 }
-
-Set-CMLocation
 
 If ($CheckPlaceHolderDetection) {
     #$HasPlaceHolderRule = $false
@@ -124,11 +127,11 @@ If (-not $CMCollection) {
         try {
             if ($NeedRefreshSchedule) {
                 $RefreshSchedule = New-CMSchedule -Start ([DateTime]::Now) -RecurInterval Days -RecurCount 7
-                $CMCollection = New-CMDeviceCollection -LimitingCollectionId $LimitingCollectionId -CollectionID $Parameters.CollectionID -RefreshSchedule $RefreshSchedule -RefreshType Both
+                $CMCollection = New-CMDeviceCollection -LimitingCollectionId $LimitingCollectionId -Name $Parameters.CollectionName -RefreshSchedule $RefreshSchedule -RefreshType Both
             } else {
-                $CMCollection = New-CMDeviceCollection -LimitingCollectionId $LimitingCollectionId -CollectionID $Parameters.CollectionID -RefreshType None
+                $CMCollection = New-CMDeviceCollection -LimitingCollectionId $LimitingCollectionId -Name $Parameters.CollectionName -RefreshType None
             }
-            
+            $Parameters.Add('CollectionID',(Get-CMDeviceCollection -ErrorAction Stop -Name $Parameters.CollectionName).CollectionID) 
             
             Move-CMObject -FolderPath $FolderPath -InputObject $CMCollection
         }
@@ -142,10 +145,15 @@ If (-not $CMCollection) {
         break 
     }
 }
+else {
+    $Parameters.Add('CollectionName',$CMCollection.Name)
+}
 
 try {
     $twoHoursAgo = ([DateTime]::Now).AddHours('-2')
-    $NewAppDeployment = New-CMApplicationDeployment @Parameters `
+    $DeployParameters = $Parameters.Clone()
+    $DeployParameters.Remove('CollectionName')
+    $NewAppDeployment = New-CMApplicationDeployment @DeployParameters `
         -DeployAction Install -UserNotification DisplayAll `
         -TimeBaseOn LocalTime -AvailableDateTime $twoHoursAgo
 
@@ -162,8 +170,9 @@ catch {
     break
 }
 
-if ($Parameters.CollectionName -ne (Get-Config 'TestCollection')) {
-    Get-CMDeployment -CollectionName (Get-Config 'TestCollection')  -FeatureType Application -SoftwareName $Parameters.Name | Remove-CMDeployment -Force
+if ($Parameters.CollectionID -ne (Get-Config 'TestCollectionID')) {
+    $TestCollectionName = Get-CMDeviceCollection -CollectionID (Get-Config 'TestCollectionID') |Select-Object -ExpandProperty Name
+    Get-CMDeployment -CollectionName $TestCollectionName -FeatureType Application -SoftwareName $Parameters.Name | Remove-CMDeployment -Force
 }
 
 $Message = "$ApplicationName deployed as $($Parameters['DeployPurpose']) to $($Parameters['CollectionName'])"
@@ -171,3 +180,4 @@ If ($CMCollection.MemberCount -eq 0) {
     $Message += "`n`nNotice: Collection has no members"
 }
 Show-Information -Message $Message
+Pop-Location
