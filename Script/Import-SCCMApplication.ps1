@@ -20,17 +20,19 @@
         MSIInfo                :
 
     $ImportApplication
-        DoImport             : True
-        DeployToTest         : True
-        UpdateSupersedence   : False
-        SkipDetection        : False
-        UninstallPrevious    : False
-        Name                 : MyFineTestApp
-        Path                 : \\some-server\some-share\some-folder\MyFineTestApp\1.4
-        AppName              : MyFineTestApp v1.4
-        InstallCommandline   : Deploy-Application.exe -DeploymentType "Install"
-        UninstallCommandline : Deploy-Application.exe -DeploymentType "Uninstall"
-        TeamsPostImport      : True
+        DoImport                  : True
+        DeployToTestCollection    : True
+        UpdateSupersedence        : False
+        UpdateDependencies        : False
+        OnlyPlaceholderDetectionRule             : False
+        UninstallPrevious         : False
+        DestinationFolder         : .\Application\Test
+        Name                      : MyFineTestApp
+        Path                      : \\some-server\some-share\some-folder\MyFineTestApp\1.4
+        AppName                   : MyFineTestApp v1.4
+        InstallCommandline        : Deploy-Application.exe -DeploymentType "Install"
+        UninstallCommandline      : Deploy-Application.exe -DeploymentType "Uninstall"
+        TeamsPostImport           : True
 
     
     1) Ceates an application with name $ImportApplication.AppName and version $AppInfo.Version
@@ -38,7 +40,7 @@
     2) Creates a Script deployment with the name $ImportApplication $ImportApplication.AppName + " PSADT"
         Uses $ImportApplication.Path for content location
         $ImportApplication.InstallCommandline and $ImportApplication.UninstallCommandline for install/unistall commmands
-    3) Detection rules (if SkipDetection not true )
+    3) Detection rules (if OnlyPlaceholderDetectionRule not true )
         New rules for MSI in $AppInfo.MSI
         New rule if $AppInfo.PSADTRegistryDetection is true
         Copy rule for file version but change Between oldversion.0, oldversion.99999 to $AppInfo.Version.0,$AppInfo.Version.99999
@@ -47,7 +49,7 @@
         All other rules are copied from old version
     4) Add supersedence if older version found. Make previous version unistall if $ImportApplication.UninstallPrevious is true.
     5) Distribute Application to Distribution Group
-    6) Deploy it to a test collection if $ImportApplication.DeployToTest is true
+    6) Deploy it to a test collection if $ImportApplication.DeployToTestCollection is true
     7) Post the import to a teams channel if $ImportApplication.TeamsPostImport is true
 #>
 
@@ -121,7 +123,8 @@ function Global:Get-ApplicationDisplayInfo {
     param($Application)
 
     $xml = [xml]$Application.SDMPackageXML
-    $info = $xml.AppMgmtDigest.ChildNodes.DisplayInfo.Info
+    # TODO copy all DisplayInfo if there are more than one until then copy first one in list.
+    $info = $xml.AppMgmtDigest.ChildNodes.DisplayInfo.Info[0]
 
     return New-Object PSObject @{
         Description = $info.Description
@@ -275,7 +278,7 @@ function Global:Import-SCCMApplication {
     [System.Collections.ArrayList]$DetectionClauses = @()
 
     # Detection
-    if (-not $ImportApplication.SkipDetection) {
+    if (-not $ImportApplication.OnlyPlaceholderDetectionRule) {
         if ($AppInfo.PSADTRegistryDetection) {
             Write-Worklog -syncHash $syncHash -Text "Added SCCMDetection detection rule"
             $DetectionClause = New-CMDetectionClauseRegistryKeyValue -Hive LocalMachine -KeyName "Software\PLS\$($AppInfo.PSADTNameMangled)" `
@@ -344,7 +347,7 @@ function Global:Import-SCCMApplication {
                 }
             } # foreach
         } # -not isNewApplication
-    } # -not Skipdetection
+    } # -not OnlyPlaceholderDetectionRule
 
     
 
@@ -426,8 +429,8 @@ function Global:Import-SCCMApplication {
     }
 
     # Deploy
-    if ($ImportApplication.DeployToTest) {      
-        Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Deployed to '$($syncHash.AppTestCollectionID)'"
+    if ($ImportApplication.DeployToTestCollection) {      
+        Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Deployed to '$($syncHash.AppTestCollectionName)'"
         if (-not $syncHash.DryRun) {
             try {
             
