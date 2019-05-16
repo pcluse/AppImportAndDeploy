@@ -146,7 +146,9 @@ If (-not $CMCollection) {
     }
 }
 else {
-    $Parameters.Add('CollectionName',$CMCollection.Name)
+    if (-not ($Parameters.ContainsKey('CollectionName'))) {
+        $Parameters.Add('CollectionName',$CMCollection.Name)
+    }
 }
 
 try {
