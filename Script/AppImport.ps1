@@ -48,6 +48,7 @@ try {
     $syncHash.AppPath = Get-Config 'AppPath'
     $syncHash.DefaultDeployToTestCollection = [bool]::parse((Get-Config 'DefaultDeployToTestCollection'))
     $syncHash.DefaultUpdateSupersedence = [bool]::parse((Get-Config 'DefaultUpdateSupersedence'))
+    $syncHash.DefaultDeploymentUpdateSupersedence = [bool]::parse((Get-Config 'DefaultDeploymentUpdateSupersedence'))
     $syncHash.DefaultUpdateDependencies = [bool]::parse((Get-Config 'DefaultUpdateDependencies'))
     $syncHash.DefaultOnlyPlaceholderDetectionRule = [bool]::parse((Get-Config 'DefaultOnlyPlaceholderDetectionRule'))
     $syncHash.DefaultUninstallPrevious = [bool]::parse((Get-Config 'DefaultUninstallPrevious'))
@@ -93,10 +94,12 @@ $psCmd = [PowerShell]::Create().AddScript({
     $syncHash.lTeamsChannelName.Content = $syncHash.TeamsChannelName
 
     # Populate settings
+    $syncHash.cbDefaultDeployToTestCollection.Content = "Deploy to '$($syncHash.AppTestCollectionName)'"
     $syncHash.cbDefaultDeployToTestCollection.IsChecked = $syncHash.DefaultDeployToTestCollection
     $syncHash.tbAppPath.Text = $syncHash.AppPath
     $syncHash.tbSCCMSiteServer.Text = $syncHash.SCCMSiteServer
     $syncHash.cbDefaultUpdateSupersedence.IsChecked = $syncHash.DefaultUpdateSupersedence
+    $syncHash.cbDefaultDeploymentUpdateSupersedence.IsChecked = $syncHash.DefaultDeploymentUpdateSupersedence
     $syncHash.cbDefaultUpdateDependencies.IsChecked = $syncHash.DefaultUpdateDependencies
     $syncHash.cbDefaultOnlyPlaceholderDetectionRule.IsChecked = $syncHash.DefaultOnlyPlaceholderDetectionRule
     $syncHash.cbDefaultUninstallPrevious.IsChecked = $syncHash.DefaultUninstallPrevious
@@ -135,6 +138,7 @@ Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.Gene
 Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.cbDefaultOnlyPlaceholderDetectionRule, $null, @{type='cb';SettingName="DefaultOnlyPlaceholderDetectionRule"}) } -Element cbDefaultOnlyPlaceholderDetectionRule -Event Click
 Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.cbDefaultUpdateDependencies, $null, @{type='cb';SettingName="DefaultUpdateDependencies"}) } -Element cbDefaultUpdateDependencies -Event Click
 Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.cbDefaultUpdateSupersedence, $null, @{type='cb';SettingName="DefaultUpdateSupersedence"}) } -Element cbDefaultUpdateSupersedence -Event Click
+Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.cbDefaultDeploymentUpdateSupersedence, $null, @{type='cb';SettingName="DefaultDeploymentUpdateSupersedence"}) } -Element cbDefaultDeploymentUpdateSupersedence -Event Click
 Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.cbDefaultUninstallPrevious, $null, @{type='cb';SettingName="DefaultUninstallPrevious"}) } -Element cbDefaultUninstallPrevious -Event Click
 Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.cbDryRun, $null, @{type='cb';SettingName="DryRun"}) } -Element cbDryRun -Event Click
 Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.tbTeamsChannelUrl, $null, @{type='tb';SettingName="TeamsChannelUrl"}) } -Element tbTeamsChannelUrl -Event KeyUp
@@ -174,6 +178,7 @@ Get-NotImporteredApplications -ApplicationFolder $syncHash.AppPath | ForEach-Obj
     $obj | Add-Member DoImport $false
     $obj | Add-Member DeployToTestCollection $syncHash.DefaultDeployToTestCollection
     $obj | Add-Member UpdateSupersedence $syncHash.DefaultUpdateSupersedence
+    $obj | Add-Member DeploymentUpdateSupersedence $syncHash.DefaultDeploymentUpdateSupersedence
     $obj | Add-Member UpdateDependencies $syncHash.DefaultUpdateDependencies
     $obj | Add-Member OnlyPlaceholderDetectionRule $syncHash.DefaultOnlyPlaceholderDetectionRule
     $obj | Add-Member UninstallPrevious $syncHash.DefaultUninstallPrevious
@@ -218,11 +223,6 @@ While ($syncHash.Window.IsVisible) {
     elseif ($Event.MessageData.type -eq 'cb') {
         $NewValue = ([bool](1 -bxor [bool]::Parse((Global:Get-Config -key $Event.MessageData.SettingName))))
         Global:Set-Config -key $Event.MessageData.SettingName $NewValue
-        #$IsChecked = $syncHash.cbDefaultDeployToTest.Dispatcher.Invoke([action]{$syncHash.cbDefaultDeployToTest.IsChecked},"Normal")
-        #Write-Host ($syncHash.Window.DefaultDeployToTestCollection)
-        #Global:Set-Config -key DefaultDeployToTestCollection -Value $syncHash.Window.DefaultDeployToTestCollection
-        #Global:Set-Config -key 'DeployToTestCollection' -Value $syncHash.cbDefaultDeployToTest
-        Write-Worklog -syncHash $syncHash -Text (Global:Get-Config -key $Event.MessageData.SettingName)
         if ($Event.MessageData.SettingName -match 'Default') {
             $syncHash.appsToImport | ForEach-Object {
                 $_."$($Event.MessageData.SettingName -replace 'Default')" = $NewValue
@@ -232,7 +232,6 @@ While ($syncHash.Window.IsVisible) {
         else {
             $syncHash."$($Event.MessageData.SettingName)" = $NewValue
         }
-        Write-Worklog -syncHash $syncHash -Text "Should save settings"
     }
     elseif ($Event.MessageData.type -eq 'tb') {
         $NewValue = ($syncHash."tb$($Event.MessageData.SettingName)" -replace 'System.Windows.Controls.TextBox: ')
@@ -248,9 +247,6 @@ While ($syncHash.Window.IsVisible) {
         }
         
     }
-    #elseif ($Event.MessageData -eq 'closing') {
-    #    Save-ConfigurationData
-    #}
 }
 
 # cleanup

@@ -20,19 +20,20 @@
         MSIInfo                :
 
     $ImportApplication
-        DoImport                  : True
-        DeployToTestCollection    : True
-        UpdateSupersedence        : False
-        UpdateDependencies        : False
-        OnlyPlaceholderDetectionRule             : False
-        UninstallPrevious         : False
-        DestinationFolder         : .\Application\Test
-        Name                      : MyFineTestApp
-        Path                      : \\some-server\some-share\some-folder\MyFineTestApp\1.4
-        AppName                   : MyFineTestApp v1.4
-        InstallCommandline        : Deploy-Application.exe -DeploymentType "Install"
-        UninstallCommandline      : Deploy-Application.exe -DeploymentType "Uninstall"
-        TeamsPostImport           : True
+        DoImport                      : True
+        DeployToTestCollection        : True
+        UpdateSupersedence            : False
+        DeploymentUpdateSupersedence  : False
+        UpdateDependencies            : False
+        OnlyPlaceholderDetectionRule  : False
+        UninstallPrevious             : False
+        DestinationFolder             : .\Application\Test
+        Name                          : MyFineTestApp
+        Path                          : \\some-server\some-share\some-folder\MyFineTestApp\1.4
+        AppName                       : MyFineTestApp v1.4
+        InstallCommandline            : Deploy-Application.exe -DeploymentType "Install"
+        UninstallCommandline          : Deploy-Application.exe -DeploymentType "Uninstall"
+        TeamsPostImport               : True
 
     
     1) Ceates an application with name $ImportApplication.AppName and version $AppInfo.Version
@@ -48,9 +49,11 @@
         Otherwise copy rule for file version but change to $AppInfo.Version
         All other rules are copied from old version
     4) Add supersedence if older version found. Make previous version unistall if $ImportApplication.UninstallPrevious is true.
-    5) Distribute Application to Distribution Group
-    6) Deploy it to a test collection if $ImportApplication.DeployToTestCollection is true
-    7) Post the import to a teams channel if $ImportApplication.TeamsPostImport is true
+    5) Replace references to older deploymenttype if used in depency
+    6) Distribute Application to Distribution Group
+    7) Move the application to the folder specified in configuration
+    8) Deploy it to a test collection if $ImportApplication.DeployToTestCollection is true
+    9) Post the import to a teams channel if $ImportApplication.TeamsPostImport is true
 #>
 
 
@@ -393,7 +396,7 @@ function Global:Import-SCCMApplication {
     }
 
     # Add supersedence
-    if (-not $isNewApplication) {
+    if (-not $isNewApplication -and $ImportApplication.UpdateSupersedence) {
         if ($syncHash.DryRun) {
             Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Supersede $($CMPreviousApplication.LocalizedDisplayName) PSADT with $($ImportApplication.AppName) PSADT"
         }
@@ -414,6 +417,8 @@ function Global:Import-SCCMApplication {
             Write-Worklog -syncHash $syncHash -Text "Supersede $($oldCMDeploymentType.LocalizedDisplayName) with $($newCMDeploymentType.LocalizedDisplayName)"
         }   
     }
+
+    # Update references (dependency)
     if (-not $isNewApplication -and $ImportApplication.UpdateDependencies) {
         $CMDependentOnThisApp = $oldCMDeploymentType | Select-Object -ExpandProperty NumberOfDependentDTs
         if ($CMDependentOnThisApp) {
@@ -461,6 +466,12 @@ function Global:Import-SCCMApplication {
         }
     }
 
+    # Handle Folder 
+    if ($ImportApplication.DestinationFolder -ne '.\Application') {
+        Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Moving application to folder $($ImportApplication.DestinationFolder)"
+        $NewCMApplication | Move-CMObject -FolderPath $ImportApplication.DestinationFolder
+    }
+
     # Deploy
     if ($ImportApplication.DeployToTestCollection) {      
         Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Deployed to '$($syncHash.AppTestCollectionName)'"
@@ -469,7 +480,7 @@ function Global:Import-SCCMApplication {
             
                 New-CMApplicationDeployment -Name $ImportApplication.AppName -CollectionID $syncHash.AppTestCollectionID `
                     -DeployAction Install -DeployPurpose Available -UserNotification DisplayAll `
-                    -UpdateSupersedence $ImportApplication.UpdateSupersedence `
+                    -UpdateSupersedence $ImportApplication.DeploymentUpdateSupersedence `
                     -TimeBaseOn LocalTime -AvailableDateTime (Get-Date) | Out-Null
             }
             catch {

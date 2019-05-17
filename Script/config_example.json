@@ -15,6 +15,7 @@
     "DefaultDestinationFolder":  ".\\Application",
     "DefaultDeployToTestCollection":  true,
     "DefaultUpdateSupersedence":  true,
+    "DefaultDeploymentUpdateSupersedence":  true,
     "DefaultUpdateDependencies":  false,
     "DefaultOnlyPlaceholderDetectionRule":  "True",
     "DefaultUninstallPrevious":  "True",
