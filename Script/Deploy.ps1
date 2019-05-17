@@ -27,6 +27,8 @@ param (
     [switch]$Force
 )
 
+Push-Location
+
 [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms") | Out-Null
 
 Function Show-Error($Message) {
@@ -45,9 +47,12 @@ $DebugPreference = "Continue"
 . $PSScriptRoot\Set-CMLocation.ps1
 . $PSScriptRoot\Get-DetectionRules.ps1
 
+
 try {
+    Set-CMLocation
     # Could not use the name "Alla datorer med SCCM-klienten i PC-domänen" because of ä
-    $Global:Config.WMINamespace = "root\sms\site_$(Get-WmiObject -ComputerName (Get-Config 'SCCMSiteServer') -Namespace 'root\sms' -Class SMS_ProviderLocation | Select-Object -ExpandProperty SiteCode)"
+    #$Global:Config | Add-Member WMINamespace "root\sms\site_$(Get-WmiObject -ComputerName (Get-Config 'SCCMSiteServer') -Namespace 'root\sms' -Class SMS_ProviderLocation | Select-Object -ExpandProperty SiteCode)"
+    Global:Set-Config -key 'WMINamespace' "root\sms\site_$(Get-WmiObject -ComputerName (Get-Config 'SCCMSiteServer') -Namespace 'root\sms' -Class SMS_ProviderLocation | Select-Object -ExpandProperty SiteCode)"
 
     $LimitingCollectionId = Get-Config 'LimitingCollectionId'
     $CheckPlaceHolderDetection = $false
@@ -59,13 +64,13 @@ try {
 
     if ($Test.IsPresent) {
         $Parameters.Add('DeployPurpose','Available')
-        $Parameters.Add('CollectionName', (Get-Config 'TestCollection'))
+        $Parameters.Add('CollectionID', (Get-Config 'TestCollectionID'))
     
         $CreateCollection = $false
         $NeedRefreshSchedule = $true
     }
     elseif ($Available.IsPresent) {
-        $Parameters.Add('CollectionName',(Get-Config 'AllOptionalCollection'))
+        $Parameters.Add('CollectionID',(Get-Config 'AllOptionalCollectionID'))
         $Parameters.Add('DeployPurpose','Available')
         
         $CreateCollection = $false
@@ -78,6 +83,7 @@ try {
             break
         }
         $Parameters.Add('CollectionName',$Matches[1])
+        $Parameters.Add('CollectionID',(Get-CMDeviceCollection -ErrorAction SilentlyContinue -Name $Matches[1]).CollectionID)
         $Parameters.Add('DeployPurpose','Required')
         
         $CreateCollection = $true
@@ -94,8 +100,6 @@ try {
     Show-Error -Message $Error[0].ToString()
     break
 }
-
-Set-CMLocation
 
 If ($CheckPlaceHolderDetection) {
     #$HasPlaceHolderRule = $false
@@ -114,10 +118,10 @@ If ($CheckPlaceHolderDetection) {
 
 # Check if collection exists and create it if must
 if ($Force.IsPresent) {
-    Remove-CMDeviceCollection -Name $Parameters.CollectionName -ErrorAction SilentlyContinue
+    Remove-CMDeviceCollection -CollectionID $Parameters.CollectionID -ErrorAction SilentlyContinue
 }
 
-$CMCollection = Get-CMDeviceCollection -Name $Parameters.CollectionName -ErrorAction SilentlyContinue
+$CMCollection = Get-CMDeviceCollection -CollectionID $Parameters.CollectionID -ErrorAction SilentlyContinue
 If (-not $CMCollection) {
     If ($CreateCollection) {
         try {
@@ -127,7 +131,7 @@ If (-not $CMCollection) {
             } else {
                 $CMCollection = New-CMDeviceCollection -LimitingCollectionId $LimitingCollectionId -Name $Parameters.CollectionName -RefreshType None
             }
-            
+            $Parameters.Add('CollectionID',(Get-CMDeviceCollection -ErrorAction Stop -Name $Parameters.CollectionName).CollectionID) 
             
             Move-CMObject -FolderPath $FolderPath -InputObject $CMCollection
         }
@@ -137,20 +141,27 @@ If (-not $CMCollection) {
         }
     }
     Else {
-        Show-Error "Collection $CollectionName don't exist. Deploy stopped"
+        Show-Error "Collection $($Parameters.CollectionID) don't exist. Deploy stopped"
         break 
+    }
+}
+else {
+    if (-not ($Parameters.ContainsKey('CollectionName'))) {
+        $Parameters.Add('CollectionName',$CMCollection.Name)
     }
 }
 
 try {
     $twoHoursAgo = ([DateTime]::Now).AddHours('-2')
-    $NewAppDeployment = New-CMApplicationDeployment @Parameters `
+    $DeployParameters = $Parameters.Clone()
+    $DeployParameters.Remove('CollectionName')
+    $NewAppDeployment = New-CMApplicationDeployment @DeployParameters `
         -DeployAction Install -UserNotification DisplayAll `
         -TimeBaseOn LocalTime -AvailableDateTime $twoHoursAgo
 
     
     if ($NewAppDeployment -and $UpdateSupersedence.IsPresent) {
-        Get-WmiObject -Namespace $Global:Config.WMINamespace -ComputerName $Global:Config.SCCMSiteServer -Class SMS_ApplicationAssignment -Filter "ApplicationName = '$ApplicationName'" | % {
+        Get-WmiObject -Namespace Get-config 'WMINamespace' -ComputerName $Global:Config.SCCMSiteServer -Class SMS_ApplicationAssignment -Filter "ApplicationName = '$ApplicationName'" | % {
             $_.UpdateDeadline = $twoHoursAgo.AddSeconds('50').ToString("yyyyMMddHHmmss.000000+***")
             $_.Put()
         }
@@ -161,8 +172,9 @@ catch {
     break
 }
 
-if ($Parameters.CollectionName -ne (Get-Config 'TestCollection')) {
-    Get-CMDeployment -CollectionName (Get-Config 'TestCollection')  -FeatureType Application -SoftwareName $Parameters.Name | Remove-CMDeployment -Force
+if ($Parameters.CollectionID -ne (Get-Config 'TestCollectionID')) {
+    $TestCollectionName = Get-CMDeviceCollection -CollectionID (Get-Config 'TestCollectionID') |Select-Object -ExpandProperty Name
+    Get-CMDeployment -CollectionName $TestCollectionName -FeatureType Application -SoftwareName $Parameters.Name | Remove-CMDeployment -Force
 }
 
 $Message = "$ApplicationName deployed as $($Parameters['DeployPurpose']) to $($Parameters['CollectionName'])"
@@ -170,3 +182,4 @@ If ($CMCollection.MemberCount -eq 0) {
     $Message += "`n`nNotice: Collection has no members"
 }
 Show-Information -Message $Message
+Pop-Location

@@ -1,71 +1,63 @@
 #######################################
 #### AppImort and Deploy settings #####
 #######################################
+<#
+    JSON was chosen to store settings because of the code needed to save and restore the configuration.
+#>
 
-$Global:Config = @{
-    # This will be set first in the script
-    WMINamespace = ''
-    # Used to do stuff that the cmdlets wont let you, once the cmdlets work this should not be needed
-    SCCMSiteServer = 'server.domain.domain'
-    ## Path where applications are stored
-    ## This should contain folders with the name of the application
-    ## and subfolders with version numbers
-    AppPath = '\\server.domain.domain\share$\applicationfolder'
-
-    ## Default install and uninstall command line
-    InstallCommandline = 'Deploy-Application.exe -DeploymentType "Install"'
-    UninstallCommandline = 'Deploy-Application.exe -DeploymentType "Uninstall"'
-
-    ## Location of log-files
-    LogPath = "$($env:LOCALAPPDATA)\Temp"
-    ## Name of log for work progression
-    WorkLog = 'AppImport-worklog.log'
-    ## Name of log for things todo
-    TODOLog = 'AppImport-todolog.log'
-
-    ## Distribution Point Group
-    DistributionPointGroup = 'Alla distributionspunkter'
-
-    ## Device Collection used for testing applications
-    TestCollection = 'Applikationstest'
-    ## Device Collection used for optional applications in Software Center
-    AllOptionalCollection = 'Alla valfria applikationer'
-    ## Path to folder for collection for required applications
-    RequiredCollectionFolder = '.\DeviceCollection\Applikation\Tvingad'
-    ## CollectionID for limiting collection for new collections created by deploy required
-    LimitingCollectionId = 'PLS00016'
-
-    ## Should imported applications by default be imported to TestCollection
-    DeployToTestCollection = $true
-
-    ## Should imported applications by default update applications in TestCollection
-    UpdateSupersedence = $false
-
-    ## Should imported applications by default just make a default detection rule
-    ## Checking if file "C:\Program Files\XXX exists
-    ## @TODO change name for this
-    OnlyDefaultDetectionRule = $false
-
-    ## Should program just do a dry-run and not really import the applications
-    ## Used only for testing purposes
-    DryRun = $false
-
-    ## Should info on imported applications be posted on teams
-    TeamsPostImport = $true
-    TeamsChannelName = "Name of teams channel"
-    TeamsChannelUrl = 'https://outlook.office.com/webhook/..........and more'
-    
+function Read-ConfigurationData {
+    $UserPath = "$($env:APPDATA)\PLS\AppImporter\config.json"
+    if (-not (Test-Path -ErrorAction SilentlyContinue -Path $UserPath)) {
+        $Path = "$PSScriptRoot\config.json"
+    }
+    else {
+        $Path = $UserPath
+    }
+    Get-Content -ErrorAction Stop -Path $Path -Raw | ConvertFrom-Json
 }
 
-## Function to get a configuration by key or throw if it don't exist
+function Save-ConfigurationData {
+    
+    $Parameters = @{
+        Encoding = 'UTF8'
+        ErrorAction = 'Stop'
+        FilePath = "$($env:APPDATA)\PLS\AppImporter\config.json"
+        Force = $true
+    }
+    
+    if (-not (Test-Path -Path $Parameters.FilePath)) {
+        New-Item -ItemType Container -Path (Split-Path -Path $Parameters.FilePath -Parent) | Out-Null
+    }
+
+    $Config | ConvertTo-Json -Depth 10 | Out-File @Parameters
+}
+
+function Global:Set-Config {
+    param(
+        [ValidateNotNullOrEmpty()]
+        [string]$key,
+        [ValidateNotNullOrEmpty()]
+        [string]$value
+    )
+    If (($Config | Get-Member -Name $key)) {
+        $Config."$key" = $value
+    }
+    else {
+        $Config | Add-Member $key $value
+    }
+    Save-ConfigurationData
+}
+
 function Global:Get-Config {
     param(
         [ValidateNotNullOrEmpty()]
         [string]$key
     )
     # Write-Debug -Message "$key exist $($Config.ContainsKey($key))"
-    If (-not $Config.ContainsKey($key)) {
+    If (-not ($Config | Get-Member -Name $key)) {
         Throw "Config $key not found in Config.ps1, check your configuration"
     }
-    $Config[$key]
+    $Config.$key
 }
+
+$Config = Read-ConfigurationData

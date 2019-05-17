@@ -43,15 +43,21 @@
                         <TextBox x:Name="tbInstallCommandline" TextWrapping="NoWrap" AcceptsReturn="False" Text="{Binding SelectedItem.InstallCommandline, ElementName=lvSelectedApps, Mode=TwoWay}" Margin="5,0" MinWidth="260"/>
                         <Label x:Name="lUninstallCommandline" Content="Uninstall commandline" VerticalAlignment="Top"/>
                         <TextBox x:Name="tbUninstallCommandline" TextWrapping="NoWrap" AcceptsReturn="False" Text="{Binding SelectedItem.UninstallCommandline, ElementName=lvSelectedApps, Mode=TwoWay}" Margin="5,0" MinWidth="260"/>
+                        <Label x:Name="lDestinationFolder" Content="Destination folder" VerticalAlignment="Top"/>
+                        <TextBox x:Name="tbDestinationFolder" TextWrapping="NoWrap" AcceptsReturn="False" Text="{Binding SelectedItem.DestinationFolder, ElementName=lvSelectedApps, Mode=TwoWay}" Margin="5,0" MinWidth="260"/>
                         <CheckBox x:Name="cbTeamsPostImport" Content="Post import on Teams channel" IsChecked="{Binding SelectedItem.TeamsPostImport, ElementName=lvSelectedApps, Mode=TwoWay}" Width="300" Height="15" Margin="5,5" HorizontalAlignment="Left"/>
-                        <Label x:Name="lTeamsChannelName" Content="Channel name" Margin="25,0,5,0" VerticalAlignment="Top"/>
-                        <CheckBox x:Name="cbSkipDetectionmethod" Content="Skip creating detectionmethod" IsChecked="{Binding SelectedItem.SkipDetection, ElementName=lvSelectedApps, Mode=TwoWay}" Width="300" Height="15" Margin="5,15" HorizontalAlignment="Left"/>
+                        <Label x:Name="lThisTeamsChannelName" Content="Channel name" Margin="25,0,5,0" VerticalAlignment="Top"/>
+                        <CheckBox x:Name="cbSkipDetectionmethod" Content="Skip creating detectionmethod" IsChecked="{Binding SelectedItem.OnlyPlaceholderDetectionRule, ElementName=lvSelectedApps, Mode=TwoWay}" Width="300" Height="15" Margin="5,15" HorizontalAlignment="Left"/>
                         <CheckBox x:Name="cbUninstallPrevious" Content="Uninstall previous version (just not replace)" IsChecked="{Binding SelectedItem.UninstallPrevious, ElementName=lvSelectedApps, Mode=TwoWay}" Width="300" Height="15" Margin="5,15" HorizontalAlignment="Left"/>
-                        <CheckBox x:Name="cbShouldDeployToTestCollection" Content="Should Deploy to 'Applikationstest'" Width="300" IsChecked="{Binding SelectedItem.DeployToTest, ElementName=lvSelectedApps, Mode=TwoWay}" Height="15" Margin="5,10,5,5" HorizontalAlignment="Left"/>
-                        <CheckBox x:Name="cbUpdateSupersedence" Content="Automatically update superseded" Width="275"
-                                IsEnabled="{Binding SelectedItem.DeployToTest, ElementName=lvSelectedApps, Mode=OneWay}"
-                                IsChecked="{Binding SelectedItem.UpdateSupersedence, ElementName=lvSelectedApps, Mode=TwoWay}" Height="30" Margin="25,10,5,5" HorizontalAlignment="Left"/>
-                   </StackPanel>
+                        <CheckBox x:Name="cbUpdateDependencies" Content="Automatically update dependencies" Width="275"
+                                IsChecked="{Binding SelectedItem.UpdateDependencies, ElementName=lvSelectedApps, Mode=TwoWay}" Height="30" Margin="5,10,5,5" HorizontalAlignment="Left"/>
+                        <CheckBox x:Name="cbUpdateSupersedence" Content="Automatically update chain of supersedence" Width="275"
+                                IsChecked="{Binding SelectedItem.UpdateSupersedence, ElementName=lvSelectedApps, Mode=TwoWay}" Height="30" Margin="5,10,5,5" HorizontalAlignment="Left"/>
+                        <CheckBox x:Name="cbShouldDeployToTestCollection" Content="Should Deploy to 'Applikationstest'" Width="300" IsChecked="{Binding SelectedItem.DeployToTestCollection, ElementName=lvSelectedApps, Mode=TwoWay}" Height="15" Margin="5,10,5,5" HorizontalAlignment="Left"/>
+                        <CheckBox x:Name="cbDeploymentUpdateSupersedence" Content="Automatically update superseded" Width="275"
+                                IsEnabled="{Binding SelectedItem.DeployToTestCollection, ElementName=lvSelectedApps, Mode=OneWay}"
+                                IsChecked="{Binding SelectedItem.DeploymentUpdateSupersedence, ElementName=lvSelectedApps, Mode=TwoWay}" Height="30" Margin="25,10,5,5" HorizontalAlignment="Left"/>
+                    </StackPanel>
                 </Grid>
             </TabItem>
             <TabItem Header="Logs">
@@ -68,15 +74,59 @@
                     </GroupBox>
                 </Grid>
             </TabItem>
-            <TabItem Header="Settings">
+            <TabItem Header="Default settings">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="23*"/>
-                        <RowDefinition Height="27*"/>
-                        <RowDefinition Height="322*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    <CheckBox x:Name="cbDefaultDeployToTest" Content="Default Deploy To Test" />
-                    <CheckBox x:Name="cbDefaultSkipDetection" Content="Default Skip detectionmethod" Grid.Row="1" />
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition />
+                    </Grid.ColumnDefinitions>
+                    <CheckBox x:Name="cbDefaultDeployToTestCollection" Content="Deploy To Test" />
+                    <CheckBox x:Name="cbDefaultDeploymentUpdateSupersedence" Content="Update superseded applications by default (during deployment to test collection)" Grid.Row="1" />
+                    <CheckBox x:Name="cbDefaultTeamsPostImport" Content="Post to teams" Grid.Row="2" />
+                    <TextBox x:Name="tbTeamsChannelUrl" MaxWidth="350" Grid.Row="2" Grid.Column="3" />
+                    <CheckBox x:Name="cbDefaultOnlyPlaceholderDetectionRule" Content="Only create placeholder detection rule" Grid.Row="4" />
+                    <CheckBox x:Name="cbDefaultUpdateDependencies" Content="Update dependencies by default" Grid.Row="5" />
+                    <CheckBox x:Name="cbDefaultUpdateSupersedence" Content="Update supersedence by default" Grid.Row="6" />
+                    <CheckBox x:Name="cbDefaultUninstallPrevious" Content="Uninstall previous version by default" Grid.Row="7" />
+                    <CheckBox x:Name="cbDryRun" Content="Dry run" Grid.Row="8" />
+                    <Label x:Name="lSCCMSiteServer" Content="Siteserver FQDN" Grid.Row="9" />
+                    <TextBox x:Name="tbSCCMSiteServer" Grid.Row="9" Grid.Column="1" />
+                    <Label x:Name="lAppPath" Grid.Row="10" Content="Path to applicationshare" />
+                    <TextBox x:Name="tbAppPath" Grid.Row="10" Grid.Column="1" />
+                    <Label x:Name="lTeamsChannelName" Grid.Row="11" Content="Name of channel in teams" />
+                    <TextBox x:Name="tbTeamsChannelName" Grid.Row="11" Grid.Column="1" />
+                    <Label x:Name="lDefaultUninstallCommandline" Grid.Row="12" Content="Default uninstall commandline" />
+                    <TextBox x:Name="tbDefaultUninstallCommandline" Grid.Row="12" Grid.Column="1" />
+                    <Label x:Name="lDefaultInstallCommandline" Grid.Row="13" Content="Default install commandline" />
+                    <TextBox x:Name="tbDefaultInstallCommandline" Grid.Row="13" Grid.Column="1" />
+                    <Label x:Name="lAppTestCollectionID" Grid.Row="14" Content="Collection ID of app test" />
+                    <TextBox x:Name="tbAppTestCollectionID" Grid.Row="14" Grid.Column="1" />
+                    <Label x:Name="lDistributionPointGroup" Grid.Row="15" Content="Name of distributionpoint group" />
+                    <TextBox x:Name="tbDistributionPointGroup" Grid.Row="15" Grid.Column="1" />
+                    <Label x:Name="lDefaultDestinationFolder" Grid.Row="16" Content="Path to folder where applications end up" />
+                    <TextBox x:Name="tbDefaultDestinationFolder" Grid.Row="16" Grid.Column="1" />
+                    <Label x:Name="lRequiredCollectionFolder" Grid.Row="17" Content="Path to folder where required applicationscollections end up" />
+                    <TextBox x:Name="tbRequiredCollectionFolder" Grid.Row="17" Grid.Column="1" />
                 </Grid>
             </TabItem>
         </TabControl>

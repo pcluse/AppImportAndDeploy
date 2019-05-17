@@ -2,14 +2,14 @@
 $DebugPreference = "SilentlyContinue"
 
 ## Current version
-$Global:Version = "1.0.2.0"
+$Global:Version = "1.1.0.0"
 
 ##############################
 $InstalledPath = $PSScriptRoot
 Write-Debug "Running from $InstalledPath"
 Get-ChildItem -File -Filter '*.ps1' -Path $InstalledPath | Where-Object { $_.Name -notin 'appimport.ps1','Deploy.ps1'} | ForEach-Object {
     Write-Debug "Loading $($_.Name)"
-    & "$($_.FullName)"
+    . "$($_.FullName)"
 }
 
 Add-Type –assemblyName PresentationFramework
@@ -27,7 +27,6 @@ Function Global:Show-Error($Message) {
         [System.Windows.Forms.MessageBoxIcon]::Error)
 }
 
-
 # A variable synchash is used to communicate between the main thread and
 # the thread the GUI is running on
 $syncHash = [hashtable]::Synchronized(@{})
@@ -37,28 +36,36 @@ $newRunspace.ThreadOptions = "ReuseThread"
 $newRunspace.Open()
 $newRunspace.SessionStateProxy.SetVariable("syncHash",$syncHash)
 
+Global:Set-Config -key 'WMINamespace' "root\sms\site_$(Get-WmiObject -ComputerName (Get-Config 'SCCMSiteServer') -Namespace 'root\sms' -Class SMS_ProviderLocation | Select-Object -ExpandProperty SiteCode)"
+
 try { 
     $syncHash.appsToImport = New-Object System.Collections.ObjectModel.ObservableCollection[System.Object]
     $syncHash.XamlPath = "$PSScriptRoot\AppImport.xaml"
-    $syncHash.SettingsRegpath = "HKCU:\Software\PLS\AppImporter"
+    #$syncHash.SettingsRegpath = "HKCU:\Software\PLS\AppImporter"
     $syncHash.Host = $Host
-    $syncHash.LogPath = Get-Config 'LogPath'
+    $syncHash.LogPath = ([Environment]::ExpandEnvironmentVariables((Get-Config 'LogPath')))
     $syncHash.SI = 'ImportDoneEvent'
     $syncHash.AppPath = Get-Config 'AppPath'
-    $syncHash.DefaultDeployToTestCollection = Get-Config 'DeployToTestCollection'
-    $syncHash.DefaultUpdateSupersedence = Get-Config 'UpdateSupersedence'
-    $syncHash.DefaultDetection = Get-Config 'OnlyDefaultDetectionRule'
-    $syncHash.DefaultUninstallPrevious = $false
+    $syncHash.DefaultDeployToTestCollection = [bool]::parse((Get-Config 'DefaultDeployToTestCollection'))
+    $syncHash.DefaultUpdateSupersedence = [bool]::parse((Get-Config 'DefaultUpdateSupersedence'))
+    $syncHash.DefaultDeploymentUpdateSupersedence = [bool]::parse((Get-Config 'DefaultDeploymentUpdateSupersedence'))
+    $syncHash.DefaultUpdateDependencies = [bool]::parse((Get-Config 'DefaultUpdateDependencies'))
+    $syncHash.DefaultOnlyPlaceholderDetectionRule = [bool]::parse((Get-Config 'DefaultOnlyPlaceholderDetectionRule'))
+    $syncHash.DefaultUninstallPrevious = [bool]::parse((Get-Config 'DefaultUninstallPrevious'))
     $syncHash.WorkLog = Get-Config 'WorkLog'
     $syncHash.TODOLog = Get-Config 'TODOLog'
-    # $syncHash.SiteServer = 'sccm.pc.lu.se'
+    $syncHash.SCCMSiteServer = 'sccm.pc.lu.se'
     $syncHash.DistributionPointGroup = Get-Config 'DistributionPointGroup'
-    $syncHash.AppTestCollection = Get-Config 'TestCollection'
-    $syncHash.DefaultInstallCommandline = Get-Config 'InstallCommandline'
-    $syncHash.DefaultUninstallCommandline = Get-Config 'UninstallCommandline'
+    $syncHash.AppTestCollectionID = Get-Config 'TestCollectionID'
+    $syncHash.RequiredCollectionFolder = Get-Config 'RequiredCollectionFolder'
+    $syncHash.DefaultInstallCommandline = Get-Config 'DefaultInstallCommandline'
+    $syncHash.DefaultUninstallCommandline = Get-Config 'DefaultUninstallCommandline'
+    $syncHash.DefaultDestinationFolder = Get-Config 'DefaultDestinationFolder'
     $syncHash.TeamsChannelName = Get-Config 'TeamsChannelName'
-    $syncHash.DefaultTeamsPostImport = Get-Config 'TeamsPostImport'
-    $syncHash.DryRun = Get-Config 'DryRun'
+    $syncHash.TeamsChannelUrl = Get-Config 'TeamsChannelUrl'
+    $syncHash.DefaultTeamsPostImport = [bool]::parse((Get-Config 'DefaultTeamsPostImport'))
+    $syncHash.DryRun = [bool]::parse((Get-Config 'DryRun'))
+    $syncHash.AppTestCollectionName = ((Get-SCCMCollectionInfo -SiteServer $syncHash.SCCMSiteServer -Namespace (Global:Get-Config -key 'WMINamespace') -CollectionID $syncHash.AppTestCollectionID).Name)
     $syncHash.Version = $Version
 } catch {
     $Error[0] | Out-Host
@@ -79,10 +86,34 @@ $psCmd = [PowerShell]::Create().AddScript({
         $syncHash.Add($_.Name,$syncHash.Window.FindName($_.Name) )
 
     }
-    
+    #Write-Host (Get-SCCMCollectionInfo -SiteServer (Global:Get-Config -key 'SCCMSiteServer') -Namespace (Global:Get-Config -key 'WMINamespace') -CollectionID $syncHash.AppTestCollectionID)
+    #Write-Host $syncHash.AppTestCollectionName
     $syncHash.Window.Title = "AppImport v$($syncHash.Version)"
-    $syncHash.cbShouldDeployToTestCollection.Content = "Should Deploy to '$($syncHash.AppTestCollection)'"
+    $syncHash.cbShouldDeployToTestCollection.Content = "Should Deploy to '$($syncHash.AppTestCollectionName)'"
+    #$syncHash.cbShouldDeployToTestCollection.Content = "Should Deploy to '$((Get-SCCMCollectionInfo -SiteServer (Get-Config -key 'SCCMSiteServer') -Namespace (Get-Config -key 'WMINamespace') -CollectionID $syncHash.AppTestCollectionID).Name)'"
     $syncHash.lTeamsChannelName.Content = $syncHash.TeamsChannelName
+
+    # Populate settings
+    $syncHash.cbDefaultDeployToTestCollection.Content = "Deploy to '$($syncHash.AppTestCollectionName)'"
+    $syncHash.cbDefaultDeployToTestCollection.IsChecked = $syncHash.DefaultDeployToTestCollection
+    $syncHash.tbAppPath.Text = $syncHash.AppPath
+    $syncHash.tbSCCMSiteServer.Text = $syncHash.SCCMSiteServer
+    $syncHash.cbDefaultUpdateSupersedence.IsChecked = $syncHash.DefaultUpdateSupersedence
+    $syncHash.cbDefaultDeploymentUpdateSupersedence.IsChecked = $syncHash.DefaultDeploymentUpdateSupersedence
+    $syncHash.cbDefaultUpdateDependencies.IsChecked = $syncHash.DefaultUpdateDependencies
+    $syncHash.cbDefaultOnlyPlaceholderDetectionRule.IsChecked = $syncHash.DefaultOnlyPlaceholderDetectionRule
+    $syncHash.cbDefaultUninstallPrevious.IsChecked = $syncHash.DefaultUninstallPrevious
+    $syncHash.tbDistributionPointGroup.Text = $syncHash.DistributionPointGroup
+    $syncHash.tbAppTestCollectionID.Text = $syncHash.AppTestCollectionID
+    $syncHash.tbDefaultInstallCommandline.Text = $syncHash.DefaultInstallCommandline
+    $syncHash.tbDefaultUninstallCommandline.Text = $syncHash.DefaultUninstallCommandline
+    $syncHash.tbDefaultDestinationFolder.Text = $syncHash.DefaultDestinationFolder
+    $syncHash.tbTeamsChannelName.Text = $syncHash.TeamsChannelName
+    $syncHash.tbTeamsChannelUrl.Text = $syncHash.TeamsChannelUrl
+    $syncHash.tbRequiredCollectionFolder.Text = $syncHash.RequiredCollectionFolder
+    $syncHash.cbDefaultTeamsPostImport.IsChecked = $syncHash.DefaultTeamsPostImport
+    $syncHash.cbDryRun.IsChecked = $syncHash.DryRun
+
     # Set source of list
     $syncHash.lvSelectedApps.ItemsSource = $syncHash.appsToImport
 
@@ -102,9 +133,27 @@ Unregister-Event -ErrorAction SilentlyContinue -SourceIdentifier $syncHash.SI
 # Disable button to prevent working while generating applist
 Disable-ImportButton
 # Register eventhandlers on elements
-Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.bImport, $null, "import") } -Element bImport -Event Click
+Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.cbDefaultDeployToTestCollection, $null, @{type='cb';SettingName="DefaultDeployToTestCollection";}) } -Element cbDefaultDeployToTestCollection -Event Click
+Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.cbDefaultTeamsPostImport, $null, @{type='cb';SettingName="DefaultTeamsPostImport"}) } -Element cbDefaultTeamsPostImport -Event Click
+Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.cbDefaultOnlyPlaceholderDetectionRule, $null, @{type='cb';SettingName="DefaultOnlyPlaceholderDetectionRule"}) } -Element cbDefaultOnlyPlaceholderDetectionRule -Event Click
+Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.cbDefaultUpdateDependencies, $null, @{type='cb';SettingName="DefaultUpdateDependencies"}) } -Element cbDefaultUpdateDependencies -Event Click
+Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.cbDefaultUpdateSupersedence, $null, @{type='cb';SettingName="DefaultUpdateSupersedence"}) } -Element cbDefaultUpdateSupersedence -Event Click
+Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.cbDefaultDeploymentUpdateSupersedence, $null, @{type='cb';SettingName="DefaultDeploymentUpdateSupersedence"}) } -Element cbDefaultDeploymentUpdateSupersedence -Event Click
+Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.cbDefaultUninstallPrevious, $null, @{type='cb';SettingName="DefaultUninstallPrevious"}) } -Element cbDefaultUninstallPrevious -Event Click
+Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.cbDryRun, $null, @{type='cb';SettingName="DryRun"}) } -Element cbDryRun -Event Click
+Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.tbTeamsChannelUrl, $null, @{type='tb';SettingName="TeamsChannelUrl"}) } -Element tbTeamsChannelUrl -Event KeyUp
+Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.tbSCCMSiteServer, $null, @{type='tb';SettingName="SCCMSiteServer"}) } -Element tbSCCMSiteServer -Event KeyUp
+Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.tbAppPath, $null, @{type='tb';SettingName="AppPath"}) } -Element tbAppPath -Event KeyUp
+Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.tbTeamsChannelName, $null, @{type='tb';SettingName="TeamsChannelName"}) } -Element tbTeamsChannelName -Event KeyUp
+Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.tbDefaultUninstallCommandline, $null, @{type='tb';SettingName="DefaultUninstallCommandline"}) } -Element tbDefaultUninstallCommandline -Event KeyUp
+Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.tbDefaultInstallCommandline, $null, @{type='tb';SettingName="DefaultInstallCommandline"}) } -Element tbDefaultInstallCommandline -Event KeyUp
+Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.tbDefaultDestinationFolder, $null, @{type='tb';SettingName="DefaultDestinationFolder"}) } -Element tbDefaultDestinationFolder -Event KeyUp
+Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.tbAppTestCollectionID, $null, @{type='tb';SettingName="AppTestCollectionID"}) } -Element tbAppTestCollectionID -Event KeyUp
+Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.tbDistributionPointGroup, $null, @{type='tb';SettingName="DistributionPointGroup"}) } -Element tbDistributionPointGroup -Event KeyUp
+Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.tbRequiredCollectionFolder, $null, @{type='tb';SettingName="RequiredCollectionFolder"}) } -Element tbRequiredCollectionFolder -Event KeyUp
+Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.bImport, $null, @{type="import"}) } -Element bImport -Event Click
 Add-Eventhandler -syncHash $syncHash -Code {
-    $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.Window, $null, "closing")
+    $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.Window, $null, @{type="closing"})
 } -Element Window -Event Closing
 
 # Register eventsubscriver
@@ -127,10 +176,13 @@ Get-NotImporteredApplications -ApplicationFolder $syncHash.AppPath | ForEach-Obj
 
     $obj = New-Object PSObject
     $obj | Add-Member DoImport $false
-    $obj | Add-Member DeployToTest $syncHash.DefaultDeployToTestCollection
+    $obj | Add-Member DeployToTestCollection $syncHash.DefaultDeployToTestCollection
     $obj | Add-Member UpdateSupersedence $syncHash.DefaultUpdateSupersedence
-    $obj | Add-Member SkipDetection $syncHash.DefaultDetection
+    $obj | Add-Member DeploymentUpdateSupersedence $syncHash.DefaultDeploymentUpdateSupersedence
+    $obj | Add-Member UpdateDependencies $syncHash.DefaultUpdateDependencies
+    $obj | Add-Member OnlyPlaceholderDetectionRule $syncHash.DefaultOnlyPlaceholderDetectionRule
     $obj | Add-Member UninstallPrevious $syncHash.DefaultUninstallPrevious
+    $obj | Add-Member DestinationFolder $syncHash.DefaultDestinationFolder
     $obj | Add-Member Name $_.Name
     $obj | Add-Member Path $_.Path
     $obj | Add-Member AppName $_.NameAndVersion
@@ -151,7 +203,7 @@ Enable-ImportButton
 While ($syncHash.Window.IsVisible) {
     $Event = Wait-Event -SourceIdentifier $syncHash.SI -Timeout 5
     $Event | Remove-Event -ErrorAction SilentlyContinue
-    if ($Event.MessageData -eq 'import') {
+    if ($Event.MessageData.type -eq 'import') {
         $AppsToImport = $syncHash.appsToImport | Where-Object { $_.DoImport }
         if ($AppsToImport -ne $null) {
             Set-ActiveTab -syncHash $syncHash -SelectedTabIndex 1
@@ -168,7 +220,33 @@ While ($syncHash.Window.IsVisible) {
             Enable-ImportButton
         }
     }
-    
+    elseif ($Event.MessageData.type -eq 'cb') {
+        $NewValue = ([bool](1 -bxor [bool]::Parse((Global:Get-Config -key $Event.MessageData.SettingName))))
+        Global:Set-Config -key $Event.MessageData.SettingName $NewValue
+        if ($Event.MessageData.SettingName -match 'Default') {
+            $syncHash.appsToImport | ForEach-Object {
+                $_."$($Event.MessageData.SettingName -replace 'Default')" = $NewValue
+            }
+            Set-SelectedAppInList -syncHash $syncHash -SelectedIndex $syncHash.lvSelectedApps.SelectedIndex
+        }
+        else {
+            $syncHash."$($Event.MessageData.SettingName)" = $NewValue
+        }
+    }
+    elseif ($Event.MessageData.type -eq 'tb') {
+        $NewValue = ($syncHash."tb$($Event.MessageData.SettingName)" -replace 'System.Windows.Controls.TextBox: ')
+        Global:Set-Config -key $Event.MessageData.SettingName -Value $NewValue
+        if ($Event.MessageData.SettingName -match 'Default') {
+            $syncHash.appsToImport | ForEach-Object {
+                $_."$($Event.MessageData.SettingName -replace 'Default')" = $NewValue
+            }
+            Set-SelectedAppInList -syncHash $syncHash -SelectedIndex $syncHash.lvSelectedApps.SelectedIndex
+        }
+        else {
+            $syncHash."$($Event.MessageData.SettingName)" = $NewValue
+        }
+        
+    }
 }
 
 # cleanup

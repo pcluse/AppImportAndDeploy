@@ -20,17 +20,20 @@
         MSIInfo                :
 
     $ImportApplication
-        DoImport             : True
-        DeployToTest         : True
-        UpdateSupersedence   : False
-        SkipDetection        : False
-        UninstallPrevious    : False
-        Name                 : MyFineTestApp
-        Path                 : \\some-server\some-share\some-folder\MyFineTestApp\1.4
-        AppName              : MyFineTestApp v1.4
-        InstallCommandline   : Deploy-Application.exe -DeploymentType "Install"
-        UninstallCommandline : Deploy-Application.exe -DeploymentType "Uninstall"
-        TeamsPostImport      : True
+        DoImport                      : True
+        DeployToTestCollection        : True
+        UpdateSupersedence            : False
+        DeploymentUpdateSupersedence  : False
+        UpdateDependencies            : False
+        OnlyPlaceholderDetectionRule  : False
+        UninstallPrevious             : False
+        DestinationFolder             : .\Application\Test
+        Name                          : MyFineTestApp
+        Path                          : \\some-server\some-share\some-folder\MyFineTestApp\1.4
+        AppName                       : MyFineTestApp v1.4
+        InstallCommandline            : Deploy-Application.exe -DeploymentType "Install"
+        UninstallCommandline          : Deploy-Application.exe -DeploymentType "Uninstall"
+        TeamsPostImport               : True
 
     
     1) Ceates an application with name $ImportApplication.AppName and version $AppInfo.Version
@@ -38,7 +41,7 @@
     2) Creates a Script deployment with the name $ImportApplication $ImportApplication.AppName + " PSADT"
         Uses $ImportApplication.Path for content location
         $ImportApplication.InstallCommandline and $ImportApplication.UninstallCommandline for install/unistall commmands
-    3) Detection rules (if SkipDetection not true )
+    3) Detection rules (if OnlyPlaceholderDetectionRule not true )
         New rules for MSI in $AppInfo.MSI
         New rule if $AppInfo.PSADTRegistryDetection is true
         Copy rule for file version but change Between oldversion.0, oldversion.99999 to $AppInfo.Version.0,$AppInfo.Version.99999
@@ -46,9 +49,11 @@
         Otherwise copy rule for file version but change to $AppInfo.Version
         All other rules are copied from old version
     4) Add supersedence if older version found. Make previous version unistall if $ImportApplication.UninstallPrevious is true.
-    5) Distribute Application to Distribution Group
-    6) Deploy it to a test collection if $ImportApplication.DeployToTest is true
-    7) Post the import to a teams channel if $ImportApplication.TeamsPostImport is true
+    5) Replace references to older deploymenttype if used in depency
+    6) Distribute Application to Distribution Group
+    7) Move the application to the folder specified in configuration
+    8) Deploy it to a test collection if $ImportApplication.DeployToTestCollection is true
+    9) Post the import to a teams channel if $ImportApplication.TeamsPostImport is true
 #>
 
 
@@ -121,7 +126,8 @@ function Global:Get-ApplicationDisplayInfo {
     param($Application)
 
     $xml = [xml]$Application.SDMPackageXML
-    $info = $xml.AppMgmtDigest.ChildNodes.DisplayInfo.Info
+    # TODO copy all DisplayInfo if there are more than one until then copy first one in list.
+    $info = $xml.AppMgmtDigest.ChildNodes.DisplayInfo.Info[0]
 
     return New-Object PSObject @{
         Description = $info.Description
@@ -275,7 +281,7 @@ function Global:Import-SCCMApplication {
     [System.Collections.ArrayList]$DetectionClauses = @()
 
     # Detection
-    if (-not $ImportApplication.SkipDetection) {
+    if (-not $ImportApplication.OnlyPlaceholderDetectionRule) {
         if ($AppInfo.PSADTRegistryDetection) {
             Write-Worklog -syncHash $syncHash -Text "Added SCCMDetection detection rule"
             $DetectionClause = New-CMDetectionClauseRegistryKeyValue -Hive LocalMachine -KeyName "Software\PLS\$($AppInfo.PSADTNameMangled)" `
@@ -306,7 +312,7 @@ function Global:Import-SCCMApplication {
                 # Remove Type because it isn't an argument
                 $Args = Convert-PSObjectToHashTable $PreviousRule
                 $Args.Remove('Type')
-                # Write-Host @Args
+
                 switch ($PreviousRule.Type) {
                     'RegistryKeyValue' {
                             if ( $PreviousRule.KeyName -ne "Software\PLS\$($AppInfo.PSADTNameMangled)") {
@@ -344,7 +350,7 @@ function Global:Import-SCCMApplication {
                 }
             } # foreach
         } # -not isNewApplication
-    } # -not Skipdetection
+    } # -not OnlyPlaceholderDetectionRule
 
     
 
@@ -390,7 +396,7 @@ function Global:Import-SCCMApplication {
     }
 
     # Add supersedence
-    if (-not $isNewApplication) {
+    if (-not $isNewApplication -and $ImportApplication.UpdateSupersedence) {
         if ($syncHash.DryRun) {
             Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Supersede $($CMPreviousApplication.LocalizedDisplayName) PSADT with $($ImportApplication.AppName) PSADT"
         }
@@ -411,7 +417,42 @@ function Global:Import-SCCMApplication {
             Write-Worklog -syncHash $syncHash -Text "Supersede $($oldCMDeploymentType.LocalizedDisplayName) with $($newCMDeploymentType.LocalizedDisplayName)"
         }   
     }
-    
+
+    # Update references (dependency)
+    if (-not $isNewApplication -and $ImportApplication.UpdateDependencies) {
+        $CMDependentOnThisApp = $oldCMDeploymentType | Select-Object -ExpandProperty NumberOfDependentDTs
+        if ($CMDependentOnThisApp) {
+            Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): There are $($CMDependentOnThisApp) app(s) which depend on the dploymenttype '$($oldCMDeploymentType.LocalizedDisplayName)'!"
+            # Get all application relationships where this deploymenttype is the target (Applications dependent of this deploymenttype)
+            Get-WmiObject -ComputerName (Get-Config -key 'SCCMSiteServer') -Namespace (Get-Config -key 'WMINamespace') -Query "SELECT * FROM SMS_AppDependenceRelation INNER JOIN SMS_ApplicationLatest ON SMS_AppDependenceRelation.FromApplicationCIID = SMS_ApplicationLatest.CI_ID WHERE SMS_AppDependenceRelation.ToDeploymentTypeCIID = '$($oldCMDeploymentType.CI_ID)'" | ForEach-Object -Begin { $i = 1 } -Process {
+                $DependentAppName = $_.SMS_ApplicationLatest.LocalizedDisplayName
+
+                # Get the name of the application to be able to fetch the deploymenttype
+                #Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName) Dependency #$($i-1): '$DependentAppName'"
+
+                # Get the deploymenttype
+                $DependentDT = Get-CMDeploymentType -ApplicationName $DependentAppName
+
+                # Get the dependency matching the name of the old application
+                $DependentDT | Get-CMDeploymentTypeDependencyGroup | Where-Object { $_.GroupName -eq "$($AppInfo.Name)-autodep" } | ForEach-Object {
+                    #Write-Worklog -syncHash $syncHash -Text "Fetching list of matching dependencies in depdencygroup '$($AppInfo.Name)-autodep'"
+                    $DepGroup = $_
+                    
+                    Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName) Dependency #$($i-1): Adding dependency to '$DependentAppName'"
+                    # Add the dependency
+                    $DepGroup | Add-CMDeploymentTypeDependency -DeploymentTypeDependency (Get-CMDeploymentType -ApplicationName $ImportApplication.AppName) -IsAutoInstall $true
+
+                    # Remove the old dependency of the old deploymenttype, if this is the last dependency in the group the group will also be removed
+                    $DepGroup | Get-CMDeploymentTypeDependency | Where-Object { $_.LocalizedDisplayName -eq $oldCMDeploymentType.LocalizedDisplayName} | ForEach-Object {
+                        Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName) Dependency #$($i-1): Removing '$($_.LocalizedDisplayName)' from '$($AppInfo.Name)-autodep'"
+                        Remove-CMDeploymentTypeDependency -DeploymentTypeDependency $_ -InputObject $DepGroup -Force
+                    }
+                }
+                $i++
+            }
+        }
+    }
+
     # Distribute
     Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Distribute content to '$($syncHash.DistributionPointGroup)'"
     if (-not $syncHash.DryRun) {
@@ -425,20 +466,26 @@ function Global:Import-SCCMApplication {
         }
     }
 
+    # Handle Folder 
+    if ($ImportApplication.DestinationFolder -ne '.\Application') {
+        Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Moving application to folder $($ImportApplication.DestinationFolder)"
+        $NewCMApplication | Move-CMObject -FolderPath $ImportApplication.DestinationFolder
+    }
+
     # Deploy
-    if ($ImportApplication.DeployToTest) {      
-        Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Deployed to '$($syncHash.AppTestCollection)'"
+    if ($ImportApplication.DeployToTestCollection) {      
+        Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Deployed to '$($syncHash.AppTestCollectionName)'"
         if (-not $syncHash.DryRun) {
             try {
             
-                New-CMApplicationDeployment -Name $ImportApplication.AppName -CollectionName $syncHash.AppTestCollection `
+                New-CMApplicationDeployment -Name $ImportApplication.AppName -CollectionID $syncHash.AppTestCollectionID `
                     -DeployAction Install -DeployPurpose Available -UserNotification DisplayAll `
-                    -UpdateSupersedence $ImportApplication.UpdateSupersedence `
+                    -UpdateSupersedence $ImportApplication.DeploymentUpdateSupersedence `
                     -TimeBaseOn LocalTime -AvailableDateTime (Get-Date) | Out-Null
             }
             catch {
                 $Error[0] | Out-Host
-                Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Error deploying to $($syncHash.AppTestCollection)"
+                Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Error deploying to $($syncHash.AppTestCollectionID)"
                 return $true
             }
         }
