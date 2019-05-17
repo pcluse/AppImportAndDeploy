@@ -309,7 +309,7 @@ function Global:Import-SCCMApplication {
                 # Remove Type because it isn't an argument
                 $Args = Convert-PSObjectToHashTable $PreviousRule
                 $Args.Remove('Type')
-                # Write-Host @Args
+
                 switch ($PreviousRule.Type) {
                     'RegistryKeyValue' {
                             if ( $PreviousRule.KeyName -ne "Software\PLS\$($AppInfo.PSADTNameMangled)") {
@@ -414,7 +414,40 @@ function Global:Import-SCCMApplication {
             Write-Worklog -syncHash $syncHash -Text "Supersede $($oldCMDeploymentType.LocalizedDisplayName) with $($newCMDeploymentType.LocalizedDisplayName)"
         }   
     }
-    
+    if (-not $isNewApplication -and $ImportApplication.UpdateDependencies) {
+        $CMDependentOnThisApp = $oldCMDeploymentType | Select-Object -ExpandProperty NumberOfDependentDTs
+        if ($CMDependentOnThisApp) {
+            Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): There are $($CMDependentOnThisApp) app(s) which depend on the dploymenttype '$($oldCMDeploymentType.LocalizedDisplayName)'!"
+            # Get all application relationships where this deploymenttype is the target (Applications dependent of this deploymenttype)
+            Get-WmiObject -ComputerName (Get-Config -key 'SCCMSiteServer') -Namespace (Get-Config -key 'WMINamespace') -Query "SELECT * FROM SMS_AppDependenceRelation INNER JOIN SMS_ApplicationLatest ON SMS_AppDependenceRelation.FromApplicationCIID = SMS_ApplicationLatest.CI_ID WHERE SMS_AppDependenceRelation.ToDeploymentTypeCIID = '$($oldCMDeploymentType.CI_ID)'" | ForEach-Object -Begin { $i = 1 } -Process {
+                $DependentAppName = $_.SMS_ApplicationLatest.LocalizedDisplayName
+
+                # Get the name of the application to be able to fetch the deploymenttype
+                #Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName) Dependency #$($i-1): '$DependentAppName'"
+
+                # Get the deploymenttype
+                $DependentDT = Get-CMDeploymentType -ApplicationName $DependentAppName
+
+                # Get the dependency matching the name of the old application
+                $DependentDT | Get-CMDeploymentTypeDependencyGroup | Where-Object { $_.GroupName -eq "$($AppInfo.Name)-autodep" } | ForEach-Object {
+                    #Write-Worklog -syncHash $syncHash -Text "Fetching list of matching dependencies in depdencygroup '$($AppInfo.Name)-autodep'"
+                    $DepGroup = $_
+                    
+                    Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName) Dependency #$($i-1): Adding dependency to '$DependentAppName'"
+                    # Add the dependency
+                    $DepGroup | Add-CMDeploymentTypeDependency -DeploymentTypeDependency (Get-CMDeploymentType -ApplicationName $ImportApplication.AppName) -IsAutoInstall $true
+
+                    # Remove the old dependency of the old deploymenttype, if this is the last dependency in the group the group will also be removed
+                    $DepGroup | Get-CMDeploymentTypeDependency | Where-Object { $_.LocalizedDisplayName -eq $oldCMDeploymentType.LocalizedDisplayName} | ForEach-Object {
+                        Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName) Dependency #$($i-1): Removing '$($_.LocalizedDisplayName)' from '$($AppInfo.Name)-autodep'"
+                        Remove-CMDeploymentTypeDependency -DeploymentTypeDependency $_ -InputObject $DepGroup -Force
+                    }
+                }
+                $i++
+            }
+        }
+    }
+
     # Distribute
     Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Distribute content to '$($syncHash.DistributionPointGroup)'"
     if (-not $syncHash.DryRun) {
