@@ -316,9 +316,10 @@ function Global:Import-SCCMApplication {
                 switch ($PreviousRule.Type) {
                     'RegistryKeyValue' {
                             if ( $PreviousRule.KeyName -ne "Software\PLS\$($AppInfo.PSADTNameMangled)") {
+                                $Args['ExpectedValue'] = $Args['ExpectedValue'] -replace $CMPreviousApplication.SoftwareVersion,$AppInfo.Version
                                 $DetectionClause = New-CMDetectionClauseRegistryKeyValue @Args
-                                Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Added RegistryKeyValue detection rule"
-                                CheckAndWarnIfVersion -syncHash $syncHash -AppName $ImportApplication.AppName -DetectionRule $Args
+                                Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Added RegistryKeyValue detection rule with new ExpectedValue set to $($AppInfo.Version)"
+                                #CheckAndWarnIfVersion -syncHash $syncHash -AppName $ImportApplication.AppName -DetectionRule $Args
                             }
                         }
                     'RegistryKey' {

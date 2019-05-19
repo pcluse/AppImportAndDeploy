@@ -85,6 +85,10 @@ function Global:Get-DetectionRules {
     Function Convert-HiveName($HiveName) {
         switch ($HiveName) {
             "HKEY_LOCAL_MACHINE" { $Hive = "LocalMachine" }
+            "HKEY_CURRENT_USER" { $Hive = 'CurrentUser' }
+            "HKEY_CLASSES_ROOT" { $Hive = 'ClassesRoot' }
+            "HKEY_CURRENT_CONFIG" { $Hive = 'CurrentConfig' }
+            "HKEY_USERS" { $Hive = 'Users'}
             default { throw "Unimplemented Hive $HiveName" }
         }
         return $Hive
