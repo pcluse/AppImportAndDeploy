@@ -83,7 +83,10 @@ try {
             break
         }
         $Parameters.Add('CollectionName',$Matches[1])
-        $Parameters.Add('CollectionID',(Get-CMDeviceCollection -ErrorAction SilentlyContinue -Name $Matches[1]).CollectionID)
+        $CollectionID = (Get-CMDeviceCollection -ErrorAction SilentlyContinue -Name $Matches[1]).CollectionID
+        if ($CollectionID) {
+            $Parameters.Add('CollectionID',$CollectionID)
+        }
         $Parameters.Add('DeployPurpose','Required')
         
         $CreateCollection = $true
@@ -131,7 +134,12 @@ If (-not $CMCollection) {
             } else {
                 $CMCollection = New-CMDeviceCollection -LimitingCollectionId $LimitingCollectionId -Name $Parameters.CollectionName -RefreshType None
             }
-            $Parameters.Add('CollectionID',(Get-CMDeviceCollection -ErrorAction Stop -Name $Parameters.CollectionName).CollectionID) 
+            if ($Parameters.ContainsKey('CollectionID')) {
+                $Parameters['CollectionID'] = (Get-CMDeviceCollection -ErrorAction Stop -Name $Parameters.CollectionName).CollectionID
+            }
+            else {
+                $Parameters.Add('CollectionID',(Get-CMDeviceCollection -ErrorAction Stop -Name $Parameters.CollectionName).CollectionID) 
+            }
             
             Move-CMObject -FolderPath $FolderPath -InputObject $CMCollection
         }
