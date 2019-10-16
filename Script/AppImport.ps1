@@ -2,7 +2,7 @@
 $DebugPreference = "SilentlyContinue"
 
 ## Current version
-$Global:Version = "1.1.1.0"
+$Global:Version = "1.2.0.0"
 
 ##############################
 $InstalledPath = $PSScriptRoot
@@ -41,7 +41,6 @@ Global:Set-Config -key 'WMINamespace' "root\sms\site_$(Get-WmiObject -ComputerNa
 try { 
     $syncHash.appsToImport = New-Object System.Collections.ObjectModel.ObservableCollection[System.Object]
     $syncHash.XamlPath = "$PSScriptRoot\AppImport.xaml"
-    #$syncHash.SettingsRegpath = "HKCU:\Software\PLS\AppImporter"
     $syncHash.Host = $Host
     $syncHash.LogPath = ([Environment]::ExpandEnvironmentVariables((Get-Config 'LogPath')))
     $syncHash.SI = 'ImportDoneEvent'
@@ -54,7 +53,6 @@ try {
     $syncHash.DefaultUninstallPrevious = [bool]::parse((Get-Config 'DefaultUninstallPrevious'))
     $syncHash.WorkLog = Get-Config 'WorkLog'
     $syncHash.TODOLog = Get-Config 'TODOLog'
-    #$syncHash.SCCMSiteServer = 'sccm.pc.lu.se'
     $syncHash.SCCMSiteServer = Get-Config 'SCCMSiteServer' #HIG-Modification GSR 2019-10-08
     $syncHash.DistributionPointGroup = Get-Config 'DistributionPointGroup'
     $syncHash.AppTestCollectionID = Get-Config 'TestCollectionID'
