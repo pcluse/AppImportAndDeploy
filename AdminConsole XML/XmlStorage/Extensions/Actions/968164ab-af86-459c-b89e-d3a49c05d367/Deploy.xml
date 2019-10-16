@@ -1,10 +1,10 @@
-<ActionDescription Class="Group" DisplayName="PLS Deploy" Description="Deploy application to special collections">
+<ActionDescription Class="Group" DisplayName="AppImporter Deploy" Description="Deploy application to special collections">
 	<ShowOn>
 		<string>ContextMenu</string>
 	</ShowOn>
     <ActionGroups>
 
-        <ActionDescription Class="Executable" DisplayName="Alla tillgängliga" MnemonicDisplayName="Alla tillgängliga" Description="Alla tillgängliga" SelectionMode="Single">
+        <ActionDescription Class="Executable" DisplayName="All available applications" MnemonicDisplayName="All available applications" Description="All available applications" SelectionMode="Single">
             <ShowOn>
                 <string>ContextMenu</string>
             </ShowOn>
@@ -14,7 +14,7 @@
             </Executable>
         </ActionDescription>
         
-        <ActionDescription Class="Executable" DisplayName="Alla tillgängliga (automatisk uppgradering)" MnemonicDisplayName="Alla tillgängliga (automatisk uppgradering)" Description="Alla tillgängliga (automatisk uppgradering)" SelectionMode="Single">
+        <ActionDescription Class="Executable" DisplayName="All available applications (automatic upgrade)" MnemonicDisplayName="All available applications (automatic upgrade)" Description="All available applications (automatic upgrade)" SelectionMode="Single">
             <ShowOn>
                 <string>ContextMenu</string>
             </ShowOn>
@@ -24,7 +24,7 @@
             </Executable>
         </ActionDescription>
 
-        <ActionDescription Class="Executable" DisplayName="Tvingande" MnemonicDisplayName="Tvingande" Description="Tvingande" SelectionMode="Single">
+        <ActionDescription Class="Executable" DisplayName="Single App Collection - Required" MnemonicDisplayName="Single App Collection - Required" Description="Single App Collection - Required" SelectionMode="Single">
             <ShowOn>
                 <string>ContextMenu</string>
             </ShowOn>
@@ -33,7 +33,16 @@
                 <Parameters>-noprofile -noninteractive -nologo -noexit -executionpolicy bypass -file "C:\Program Files\PLS\AppImportAndDeploy\Deploy.ps1" -Required -UpdateSupersedence -ApplicationName "##SUB:LocalizedDisplayName##"</Parameters>
             </Executable>
         </ActionDescription>
-        <ActionDescription Class="Executable" DisplayName="Applikationstest" MnemonicDisplayName="Applikationstest" Description="Grupp för test av installation" SelectionMode="Single">
+        <ActionDescription Class="Executable" DisplayName="Single App Collection - Available" MnemonicDisplayName="Single App Collection - Available" Description="Single App Collection -Available" SelectionMode="Single">
+            <ShowOn>
+                <string>ContextMenu</string>
+            </ShowOn>
+            <Executable>
+                <FilePath>C:\Program Files\PLS\SilentPowershell\SilentPowershell.exe</FilePath>
+                <Parameters>-noprofile -noninteractive -nologo -noexit -executionpolicy bypass -file "C:\Program Files\PLS\AppImportAndDeploy\Deploy.ps1" -AvailableSpecific -UpdateSupersedence -ApplicationName "##SUB:LocalizedDisplayName##"</Parameters>
+            </Executable>
+        </ActionDescription>		
+        <ActionDescription Class="Executable" DisplayName="AppTesting - Available" MnemonicDisplayName="AppTesting - Available" Description="Collection for installation test" SelectionMode="Single">
             <ShowOn>
                 <string>ContextMenu</string>
             </ShowOn>
@@ -42,5 +51,23 @@
                 <Parameters>-noprofile -noninteractive -nologo -noexit -executionpolicy bypass -file "C:\Program Files\PLS\AppImportAndDeploy\Deploy.ps1" -Test -ApplicationName "##SUB:LocalizedDisplayName##"</Parameters>
             </Executable>
         </ActionDescription>
+        <ActionDescription Class="Executable" DisplayName="AppTesting - Available (automatic upgrade)" MnemonicDisplayName="AppTesting - Available (automatic upgrade)" Description="Collection for installation test" SelectionMode="Single">
+            <ShowOn>
+                <string>ContextMenu</string>
+            </ShowOn>
+            <Executable>
+                <FilePath>C:\Program Files\PLS\SilentPowershell\SilentPowershell.exe</FilePath>
+                <Parameters>-noprofile -noninteractive -nologo -noexit -executionpolicy bypass -file "C:\Program Files\PLS\AppImportAndDeploy\Deploy.ps1" -Test -UpdateSupersedence -ApplicationName "##SUB:LocalizedDisplayName##"</Parameters>
+            </Executable>
+        </ActionDescription>
+        <ActionDescription Class="Executable" DisplayName="AppTesting - Required" MnemonicDisplayName="AppTesting - Required" Description="Collection for installation test" SelectionMode="Single">
+            <ShowOn>
+                <string>ContextMenu</string>
+            </ShowOn>
+            <Executable>
+                <FilePath>C:\Program Files\PLS\SilentPowershell\SilentPowershell.exe</FilePath>
+                <Parameters>-noprofile -noninteractive -nologo -noexit -executionpolicy bypass -file "C:\Program Files\PLS\AppImportAndDeploy\Deploy.ps1" -TestRequired -UpdateSupersedence -ApplicationName "##SUB:LocalizedDisplayName##"</Parameters>
+            </Executable>
+        </ActionDescription>		
     </ActionGroups>
 </ActionDescription>

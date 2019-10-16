@@ -54,7 +54,8 @@ try {
     $syncHash.DefaultUninstallPrevious = [bool]::parse((Get-Config 'DefaultUninstallPrevious'))
     $syncHash.WorkLog = Get-Config 'WorkLog'
     $syncHash.TODOLog = Get-Config 'TODOLog'
-    $syncHash.SCCMSiteServer = 'sccm.pc.lu.se'
+    #$syncHash.SCCMSiteServer = 'sccm.pc.lu.se'
+    $syncHash.SCCMSiteServer = Get-Config 'SCCMSiteServer' #HIG-Modification GSR 2019-10-08
     $syncHash.DistributionPointGroup = Get-Config 'DistributionPointGroup'
     $syncHash.AppTestCollectionID = Get-Config 'TestCollectionID'
     $syncHash.RequiredCollectionFolder = Get-Config 'RequiredCollectionFolder'

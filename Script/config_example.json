@@ -22,5 +22,7 @@
     "DryRun":  false,
     "DefaultTeamsPostImport":  "True",
     "TeamsChannelName": "",
-    "TeamsChannelUrl": ""
+    "TeamsChannelUrl": "",
+    "RegDetectionKeyPath":  "Software\\AppImporter\\",
+    "RegDetectionValueName":  "Version"
 }
