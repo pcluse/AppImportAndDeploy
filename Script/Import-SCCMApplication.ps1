@@ -128,12 +128,13 @@ function Global:Get-ApplicationDisplayInfo {
     $xml = [xml]$Application.SDMPackageXML
     # TODO copy all DisplayInfo if there are more than one until then copy first one in list.
     #$info = $xml.AppMgmtDigest.ChildNodes.DisplayInfo.Info[0] GSR 2019-10-08. Funkar inte med [0]
-    $info = $xml.AppMgmtDigest.ChildNodes.DisplayInfo.Info
-    return New-Object PSObject @{
-        Description = $info.Description
-        InfoUrl = $info.InfoUrl
-        InfoUrlText = $info.InfoUrlText
-        Publisher = $info.Publisher # HIG-Modification. GSR 190906
+    $xml.AppMgmtDigest.ChildNodes.DisplayInfo.Info | ForEach-Object {
+        [PSCustomObject] @{
+            Description = $_.Description
+            InfoUrl = $_.InfoUrl
+            InfoUrlText = $_.InfoUrlText
+            Publisher = $_.Publisher # HIG-Modification. GSR 190906
+        }
     }
 }
 
@@ -271,21 +272,58 @@ function Global:Import-SCCMApplication {
 
         # Copy Application Catalog info from previous version
         if (-not $isNewApplication) {
+            <#
             $DisplayInfo = Get-ApplicationDisplayInfo -Application $CMPreviousApplication
             
             if (-not [string]::IsNullOrEmpty($DisplayInfo.InfoUrlText)) { $Args['LinkText'] = $DisplayInfo.InfoUrlText }
             if (-not [string]::IsNullOrEmpty($DisplayInfo.Description)) { $Args['LocalizedApplicationDescription'] = $DisplayInfo.Description }
             if (-not [string]::IsNullOrEmpty($DisplayInfo.InfoUrl)) { $Args['UserDocumentation'] = $DisplayInfo.InfoUrl }
             if (-not [string]::IsNullOrEmpty($DisplayInfo.Publisher)) { $Args['Publisher'] = $DisplayInfo.Publisher }     # HIG-Modification. GSR 190906
+            #>
+
+            # This solves the issue which prevented copying of multiple displayinfo
+
+            $NewCMApplication = ($CMPreviousApplication | ConvertTo-CMApplication).Copy()
+            $NewCMApplication.SoftwareVersion = $AppInfo.Version
+            $NewCMApplication.Title = $NewCMApplication.Title -replace $CMPreviousApplication.SoftwareVersion, $AppInfo.Version
+            $NewCMApplication.Name = $NewCMApplication.CreateNewId().Name
+            $NewCMApplication.Contacts[0].Id = $env:USERNAME
+            $NewCMApplication.Owners[0].Id = $env:USERNAME
+            $NewCMApplication.ReleaseDate = (Get-Date)
+            # TODO Change paths and ID of deploymenttype instead of making a new one
+            $NewCMApplication.DeploymentTypes.RemoveAt(0)
+            $NewCMApplication = $NewCMApplication | ConvertFrom-CMApplication
+            $NewCMApplication.Put()
+            $NewCMApplication = Get-CMApplication -Name $ImportApplication.AppName
+            <#
+            
+            The following would also copy deploymenttype settings
+
+            $newapp.DeploymentTypes | ForEach-Object { 
+                $_.Name = $_.CreateNewId().Name
+                $_.Title = $_.Title -replace $CMPreviousApplication.SoftwareVersion, $AppInfo.Version
+                if (-not [string]::IsNullOrEmpty($ImportApplication.InstallCommandline)) {
+                    $_.Installer.InstallCommandline = $ImportApplication.InstallCommandline
+                }
+                if (-not [string]::IsNullOrEmpty($ImportApplication.UninstallCommandline)) {
+                    $_.Installer.UninstallCommandline = $ImportApplication.UninstallCommandline
+                }
+                $_.installer.Contents | ForEach-Object {
+                    $_.ChangeId()
+                }
+            }
+            #>
         }
-        $Args | Out-Host
-        try {
-            $NewCMApplication = New-CMApplication @Args
-        }
-        catch {
-            $Error[0] | Out-Host
-            Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Error creating application"
-            return $false
+        else {
+            try {
+                $Args | Out-Host
+                $NewCMApplication = New-CMApplication @Args
+            }
+            catch {
+                $Error[0] | Out-Host
+                Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Error creating application"
+                return $false
+            }
         }
         
     }
