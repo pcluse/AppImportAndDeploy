@@ -16,6 +16,15 @@
 
    Create collection Application/Tvingad/TestApp (if it don't exist) and deploys to that with required.
    Aborts if application have placeholder detection
+.EXAMPLE
+   Deploy.ps1 -ApplicationName "TestApp v1.0" -AvailableSpecific
+
+   Create collection Application/Tvingad/TestApp (if it don't exist) and deploys to that with available.
+   Aborts if application have placeholder detection
+.EXAMPLE
+   Deploy.ps1 -ApplicationName "TestApp v1.0" -TestRequired
+
+   Deploys to "Applicationstest" with required. Aborts if application have placeholder detection
 #>
 
 param (
@@ -24,7 +33,9 @@ param (
     [switch]$Required,
     [switch]$Test,
     [switch]$UpdateSupersedence,
-    [switch]$Force
+    [switch]$Force,
+    [switch]$AvailableSpecific, # HIG-Modification 
+    [switch]$TestRequired       # HIG-Modification 
 )
 
 Push-Location
@@ -94,6 +105,34 @@ try {
         $CheckPlaceHolderDetection = $true
         $NeedRefreshSchedule = $false
     }
+
+    # HIG-Modification start
+    elseif ($AvailableSpecific.IsPresent) {
+        if (-not ($ApplicationName -match "^(.*) v\d+(\.\d+)*$")) {
+            Show-Error "Application name don't match XXXX v9... structure. Deploy stopped"
+            break
+        }
+        $Parameters.Add('CollectionName',$Matches[1])
+        $CollectionID = (Get-CMDeviceCollection -ErrorAction SilentlyContinue -Name $Matches[1]).CollectionID
+        if ($CollectionID) {
+            $Parameters.Add('CollectionID',$CollectionID)
+        }		
+        $Parameters.Add('DeployPurpose','Available')
+        
+        $CreateCollection = $true
+        $FolderPath = Get-Config 'AvailableCollectionFolder'
+        $CheckPlaceHolderDetection = $true
+		$NeedRefreshSchedule = $false
+    }
+    elseif ($TestRequired.IsPresent) {
+        $Parameters.Add('DeployPurpose','Required')
+        $Parameters.Add('CollectionID', (Get-Config 'TestCollectionID'))
+    
+        $CreateCollection = $false
+		$NeedRefreshSchedule = $true
+    }
+    # HIG-Modification end
+
     else {
         Show-Error "Deploy type not given -Test, -Available or -Required"
         break
@@ -169,7 +208,8 @@ try {
 
     
     if ($NewAppDeployment -and $UpdateSupersedence.IsPresent) {
-        Get-WmiObject -Namespace Get-config 'WMINamespace' -ComputerName $Global:Config.SCCMSiteServer -Class SMS_ApplicationAssignment -Filter "ApplicationName = '$ApplicationName'" | % {
+        # HIG-modification GSR 191015 Bug correction. Paranthesis missing (Get-config 'WMINamespace')
+        Get-WmiObject -Namespace (Get-config 'WMINamespace') -ComputerName $Global:Config.SCCMSiteServer -Class SMS_ApplicationAssignment -Filter "ApplicationName = '$ApplicationName'" | % {
             $_.UpdateDeadline = $twoHoursAgo.AddSeconds('50').ToString("yyyyMMddHHmmss.000000+***")
             $_.Put()
         }

@@ -127,13 +127,30 @@ function Global:Get-ApplicationDisplayInfo {
 
     $xml = [xml]$Application.SDMPackageXML
     # TODO copy all DisplayInfo if there are more than one until then copy first one in list.
-    $info = $xml.AppMgmtDigest.ChildNodes.DisplayInfo.Info[0]
-
-    return New-Object PSObject @{
-        Description = $info.Description
-        InfoUrl = $info.InfoUrl
-        InfoUrlText = $info.InfoUrlText
+    #$info = $xml.AppMgmtDigest.ChildNodes.DisplayInfo.Info[0] GSR 2019-10-08. Funkar inte med [0]
+    $xml.AppMgmtDigest.ChildNodes.DisplayInfo.Info | ForEach-Object {
+        [PSCustomObject] @{
+            Description = $_.Description
+            InfoUrl = $_.InfoUrl
+            InfoUrlText = $_.InfoUrlText
+            Publisher = $_.Publisher # HIG-Modification. GSR 190906
+        }
     }
+}
+
+
+function Global:Get-AppDeploymentTypeInteraction {
+# HIG-Modification GSR 1900909. Copy previous deploymenttype info (UserInteraction). 
+# https://www.reddit.com/r/SCCM/comments/a34v0l/powershell_getcmdeploymenttype/
+# Kanske ska denna skapa ett object som Get-ApplicationDisplayInfo ovan. Samtidigt tror jag bara det var interaction som var intressant.
+
+    param($Application)
+
+    $DeploymentTypeName = "$($Application.LocalizedDisplayName) PSADT"
+    [xml]$xml = ($Application | Get-CMDeploymentType -DeploymentTypeName $DeploymentTypeName | select SDMPackageXML).SDMPackageXML
+    $deployTypeArgs =  $xml.ChildNodes.DeploymentType.Installer.InstallAction.Args.Arg
+    $UserInteraction =  ($deployTypeArgs| where {$_.name -eq "RequiresUserInteraction"}).'#text'
+    return $UserInteraction
 }
 
 
@@ -176,7 +193,9 @@ function Global:Import-SCCMApplication {
         }
     }
 
-    If ($AppInfo.PSADTRegistryDetection) {
+
+<# HIG-Modification GSR 2019-10-08
+  If ($AppInfo.PSADTRegistryDetection) {
         $shouldReturn = $false
         If ($AppInfo.PSADTName -eq '') {
             Write-Todolog -syncHash $syncHash -Text "$($ImportApplication.AppName): Add-SCCMDetection but `$appName not set"
@@ -190,7 +209,28 @@ function Global:Import-SCCMApplication {
             Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Imported aborted"
             return $false
         }
+    } 
+#>
+
+    # HIG-Modification GSR 2019-10-08
+    $RegistryDetection = New-Object PSObject @{
+        Key    = "HKLM:\" + (Get-Config -key 'RegDetectionKeyPath') + $appinfo.Name
+        SubKey = (Get-Config -key 'RegDetectionKeyPath') + $appinfo.Name
+        ValueName  = (Get-Config -key 'RegDetectionValueName')
+        ValueData = $appinfo.Version
+        ImportDate = (get-date).tostring("yyyy-MM-dd HH:mm:ss")
     }
+    #Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Created registry detection object"
+
+    If ($AppInfo.PSADTRegistryDetection) {
+        # Must be in FileSystem location to crete file
+        Push-Location -Path "C:"   
+        $RegistryDetectionFile = $AppInfo.Path + "\RegistryDetectionData.json"
+        $RegistryDetection |  ConvertTo-Json -Depth 10 | Out-File $RegistryDetectionFile -Force
+        Pop-Location
+        Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Add-SCCMDetection: Created registry detection json File in source folder"
+    }
+
 
     $ImportedApplicationVersion = Get-Version $AppInfo.Version
     $CMImportedApplications = Get-CMApplication -Name "$($ImportApplication.Name) v*"
@@ -224,6 +264,7 @@ function Global:Import-SCCMApplication {
             SoftwareVersion  = $AppInfo.Version
             AutoInstall      = $true
             LocalizedName    = $ImportApplication.Name
+            ReleaseDate      = Get-Date  # HIG-Modification. GSR 190906
         }
         If ($AppInfo.IconPath -ne $null) {
             $Args['IconLocationFile'] = $AppInfo.IconPath
@@ -231,24 +272,70 @@ function Global:Import-SCCMApplication {
 
         # Copy Application Catalog info from previous version
         if (-not $isNewApplication) {
+            <#
             $DisplayInfo = Get-ApplicationDisplayInfo -Application $CMPreviousApplication
             
             if (-not [string]::IsNullOrEmpty($DisplayInfo.InfoUrlText)) { $Args['LinkText'] = $DisplayInfo.InfoUrlText }
             if (-not [string]::IsNullOrEmpty($DisplayInfo.Description)) { $Args['LocalizedApplicationDescription'] = $DisplayInfo.Description }
             if (-not [string]::IsNullOrEmpty($DisplayInfo.InfoUrl)) { $Args['UserDocumentation'] = $DisplayInfo.InfoUrl }
+            if (-not [string]::IsNullOrEmpty($DisplayInfo.Publisher)) { $Args['Publisher'] = $DisplayInfo.Publisher }     # HIG-Modification. GSR 190906
+            #>
+
+            # This solves the issue which prevented copying of multiple displayinfo
+
+            $NewCMApplication = ($CMPreviousApplication | ConvertTo-CMApplication).Copy()
+            $NewCMApplication.SoftwareVersion = $AppInfo.Version
+            $NewCMApplication.Title = $NewCMApplication.Title -replace $CMPreviousApplication.SoftwareVersion, $AppInfo.Version
+            $NewCMApplication.Name = $NewCMApplication.CreateNewId().Name
+            $NewCMApplication.Contacts[0].Id = $env:USERNAME
+            $NewCMApplication.Owners[0].Id = $env:USERNAME
+            $NewCMApplication.ReleaseDate = (Get-Date)
+            # TODO Change paths and ID of deploymenttype instead of making a new one
+            $NewCMApplication.DeploymentTypes.RemoveAt(0)
+            $NewCMApplication = $NewCMApplication | ConvertFrom-CMApplication
+            $NewCMApplication.Put()
+            $NewCMApplication = Get-CMApplication -Name $ImportApplication.AppName
+            <#
+            
+            The following would also copy deploymenttype settings
+
+            $newapp.DeploymentTypes | ForEach-Object { 
+                $_.Name = $_.CreateNewId().Name
+                $_.Title = $_.Title -replace $CMPreviousApplication.SoftwareVersion, $AppInfo.Version
+                if (-not [string]::IsNullOrEmpty($ImportApplication.InstallCommandline)) {
+                    $_.Installer.InstallCommandline = $ImportApplication.InstallCommandline
+                }
+                if (-not [string]::IsNullOrEmpty($ImportApplication.UninstallCommandline)) {
+                    $_.Installer.UninstallCommandline = $ImportApplication.UninstallCommandline
+                }
+                $_.installer.Contents | ForEach-Object {
+                    $_.ChangeId()
+                }
+            }
+            #>
         }
-        $Args | Out-Host
-        try {
-            $NewCMApplication = New-CMApplication @Args
-        }
-        catch {
-            $Error[0] | Out-Host
-            Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Error creating application"
-            return $false
+        else {
+            try {
+                $Args | Out-Host
+                $NewCMApplication = New-CMApplication @Args
+            }
+            catch {
+                $Error[0] | Out-Host
+                Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Error creating application"
+                return $false
+            }
         }
         
     }
     # TODO get description from previous version
+
+
+    # Copy previous deploymenttype UserInteraction. HIG-Modification GSR 1900909
+    $UserInteraction = "false"
+    if (-not $isNewApplication) {
+        $UserInteraction = Get-AppDeploymentTypeInteraction -Application $CMPreviousApplication
+    }
+
 
     $DeploymentTypeName = "$($ImportApplication.AppName) PSADT"
 
@@ -267,6 +354,12 @@ function Global:Import-SCCMApplication {
                 -EstimatedRuntimeMins 10 `
                 -MaximumRuntimeMins 120 `
                 -RebootBehavior BasedOnExitCode ` | Out-Null
+
+            # HIG-modification. GSR 190917. -RequireUserInteraction switch with add-cmscriptdeploymenttype, boolean with set-cmscriptdeploymenttype
+            if ($UserInteraction -eq "true") {
+                Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Set allow user interaction true"
+                Set-CMscriptDeploymentType -Application $NewCMApplication -DeploymentTypeName $DeploymentTypeName -RequireUserInteraction $true
+            }
         }
         catch {
             $Error[0] | Out-Host
@@ -282,12 +375,23 @@ function Global:Import-SCCMApplication {
 
     # Detection
     if (-not $ImportApplication.OnlyPlaceholderDetectionRule) {
+
+<#        
         if ($AppInfo.PSADTRegistryDetection) {
             Write-Worklog -syncHash $syncHash -Text "Added SCCMDetection detection rule"
             $DetectionClause = New-CMDetectionClauseRegistryKeyValue -Hive LocalMachine -KeyName "Software\PLS\$($AppInfo.PSADTNameMangled)" `
                 -Value -ValueName $null -ExpectedValue $AppInfo.PSADTVersion -PropertyType String -ExpressionOperator IsEquals
             $DetectionClauses.Add($DetectionClause) | Out-Null
         }
+#>
+        # HIG-Modification GSR 2019-10-08
+        if ($AppInfo.PSADTRegistryDetection) {
+            Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Added SCCMDetection detection rule"
+            $DetectionClause = New-CMDetectionClauseRegistryKeyValue -Hive LocalMachine -KeyName "$($RegistryDetection.SubKey)" `
+                -Value -ValueName $($RegistryDetection.ValueName) -ExpectedValue $($RegistryDetection.ValueData) -PropertyType String -ExpressionOperator IsEquals
+            $DetectionClauses.Add($DetectionClause) | Out-Null
+        }
+
         if ($AppInfo.MSIInfo -ne $null) { 
             $AppInfo.MSIInfo | ForEach-Object {
                 Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Added MSI detection rule $($_.Productcode) has version $($_.ProductVersion)"
@@ -314,8 +418,10 @@ function Global:Import-SCCMApplication {
                 $Args.Remove('Type')
 
                 switch ($PreviousRule.Type) {
+                    # GSR 2019-10-10 TOTO. Måste anapassas till nya Add-SCCM-detectionData
                     'RegistryKeyValue' {
-                            if ( $PreviousRule.KeyName -ne "Software\PLS\$($AppInfo.PSADTNameMangled)") {
+                            #if ( $PreviousRule.KeyName -ne "Software\PLS\$($AppInfo.PSADTNameMangled)") {  # HIG-Modification GSR 2019-10-10
+                            if ( $PreviousRule.KeyName -ne $($RegistryDetection.SubKey)) {
                                 $Args['ExpectedValue'] = $Args['ExpectedValue'] -replace $CMPreviousApplication.SoftwareVersion,$AppInfo.Version
                                 $DetectionClause = New-CMDetectionClauseRegistryKeyValue @Args
                                 Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Added RegistryKeyValue detection rule with new ExpectedValue set to $($AppInfo.Version)"
