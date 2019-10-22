@@ -95,6 +95,8 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -127,6 +129,10 @@
                     <TextBox x:Name="tbDefaultDestinationFolder" Grid.Row="16" Grid.Column="1" />
                     <Label x:Name="lRequiredCollectionFolder" Grid.Row="17" Content="Path to folder where required applicationscollections end up" />
                     <TextBox x:Name="tbRequiredCollectionFolder" Grid.Row="17" Grid.Column="1" />
+                    <Label x:Name="lRegDetectionKeyPath" Grid.Row="18" Content="Path to key where detection data should be stored" />
+                    <TextBox x:Name="tbRegDetectionKeyPath" Grid.Row="18" Grid.Column="1" />
+                    <Label x:Name="lRegDetectionValueName" Grid.Row="19" Content="Name of the value in which version is stored" />
+                    <TextBox x:Name="tbRegDetectionValueName" Grid.Row="19" Grid.Column="1" />
                 </Grid>
             </TabItem>
         </TabControl>

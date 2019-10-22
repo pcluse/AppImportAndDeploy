@@ -343,6 +343,25 @@ function Global:Import-SCCMApplication {
     Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Added Scriptdeploymenttype $DeploymentTypeName"
     if (-not $syncHash.DryRun) {
         try {
+            $AddCMScriptDeploymentTypeParameters = @{
+                DeploymentTypeName = $DeploymentTypeName
+                ContentLocation = $ImportApplication.Path
+                ScriptLanguage = 'Powershell'
+                ScriptText = "#"
+                InstallationBehaviorType = 'InstallForSystem'
+                LogonRequirementType = 'WhetherOrNotUserLoggedOn'
+                EstimatedRuntimeMins = 10
+                MaximumRuntimeMins = 120
+                RebootBehavior = 'BasedOnExitCode'
+            }
+
+            if (-not ([string]::IsNullOrEmpty($ImportApplication.InstallCommandline))) {
+                $AddCMScriptDeploymentTypeParameters.Add('InstallCommand',$ImportApplication.InstallCommandline)
+            }
+            if (-not ([string]::IsNullOrEmpty($ImportApplication.UninstallCommandline))) {
+                $AddCMScriptDeploymentTypeParameters.Add('UninstallCommand',$ImportApplication.UninstallCommandline)
+            }
+            <#
             $NewCMApplication | Add-CMScriptDeploymentType -DeploymentTypeName $DeploymentTypeName `
                 -ContentLocation $ImportApplication.Path `
                 -ScriptLanguage PowerShell `
@@ -354,7 +373,8 @@ function Global:Import-SCCMApplication {
                 -EstimatedRuntimeMins 10 `
                 -MaximumRuntimeMins 120 `
                 -RebootBehavior BasedOnExitCode ` | Out-Null
-
+            #>
+            $NewCMApplication | Add-CMScriptDeploymentType @AddCMScriptDeploymentTypeParameters | Out-Null
             # HIG-modification. GSR 190917. -RequireUserInteraction switch with add-cmscriptdeploymenttype, boolean with set-cmscriptdeploymenttype
             if ($UserInteraction -eq "true") {
                 Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Set allow user interaction true"
