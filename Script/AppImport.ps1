@@ -73,6 +73,11 @@ try {
 }
 
 $psCmd = [PowerShell]::Create().AddScript({
+    $connectionManager = New-Object Microsoft.ConfigurationManagement.ManagementProvider.WqlQueryEngine.WqlConnectionManager
+    $connectionManager.Connect($syncHash.SCCMSiteServer) | Out-Null
+    [Microsoft.ConfigurationManagement.ApplicationManagement.NamedObject]::DefaultScope = [Microsoft.ConfigurationManagement.AdminConsole.AppManFoundation.ApplicationFactory]::GetAuthoringScope($connectionManager)
+    $connectionManager.Disconnect()
+    
     $WindowXAMLString = Get-Content $syncHash.XamlPath
     [xml]$WindowXAML = $WindowXAMLString -replace 'mc:Ignorable="d"','' -replace "x:N",'N' -replace 'x:Class="[a-zA-Z0-9\.]+"',''
     
