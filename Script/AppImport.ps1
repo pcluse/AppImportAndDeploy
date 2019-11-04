@@ -20,6 +20,8 @@ Add-Type -AssemblyName System.Drawing
 
 [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms") | Out-Null
 
+Add-Type -Path 'C:\Program Files (x86)\Microsoft Configuration Manager\AdminConsole\bin\AdminUI.WqlQueryEngine.dll','C:\Program Files (x86)\Microsoft Configuration Manager\AdminConsole\bin\AdminUI.AppManFoundation.dll'
+
 Function Global:Show-Error($Message) {
     Write-Debug -Message "PLS AppImport Error $Message"
     [System.Windows.Forms.MessageBox]::Show($Message,"PLS AppImport Error",
@@ -77,8 +79,9 @@ try {
 
 $psCmd = [PowerShell]::Create().AddScript({
     $connectionManager = New-Object Microsoft.ConfigurationManagement.ManagementProvider.WqlQueryEngine.WqlConnectionManager
-    $connectionManager.Connect($syncHash.SCCMSiteServer) | Out-Null
+    $connectionManager.Connect($syncHash.SCCMSiteServer)
     [Microsoft.ConfigurationManagement.ApplicationManagement.NamedObject]::DefaultScope = [Microsoft.ConfigurationManagement.AdminConsole.AppManFoundation.ApplicationFactory]::GetAuthoringScope($connectionManager)
+    Start-Sleep -Seconds 2
     $connectionManager.Disconnect()
     
     $WindowXAMLString = Get-Content $syncHash.XamlPath
@@ -267,4 +270,3 @@ $Event | Remove-Event -ErrorAction SilentlyContinue
 Unregister-Event -ErrorAction SilentlyContinue -SourceIdentifier $syncHash.SI | Out-Null
 
 Set-Location $OldLocation
-
