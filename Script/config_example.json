@@ -2,6 +2,7 @@
     "SCCMSiteServer":  "",
     "AppPath":  "",
     "DefaultInstallCommandLine":  "Deploy-Application.exe -DeploymentType \"Install\"",
+    "DefaultRepairCommandLine":  "Deploy-Application.exe -DeploymentType \"Repair\"",
     "DefaultUninstallCommandLine":  "Deploy-Application.exe -DeploymentType \"Uninstall\"",
     "LogPath":  "",
     "WorkLog":  "AppImport-Work.log",

@@ -43,6 +43,8 @@
                         <TextBox x:Name="tbInstallCommandline" TextWrapping="NoWrap" AcceptsReturn="False" Text="{Binding SelectedItem.InstallCommandline, ElementName=lvSelectedApps, Mode=TwoWay}" Margin="5,0" MinWidth="260"/>
                         <Label x:Name="lUninstallCommandline" Content="Uninstall commandline" VerticalAlignment="Top"/>
                         <TextBox x:Name="tbUninstallCommandline" TextWrapping="NoWrap" AcceptsReturn="False" Text="{Binding SelectedItem.UninstallCommandline, ElementName=lvSelectedApps, Mode=TwoWay}" Margin="5,0" MinWidth="260"/>
+                        <Label x:Name="lRepairCommandline" Content="Repair commandline" VerticalAlignment="Top"/>
+                        <TextBox x:Name="tbRepairCommandline" TextWrapping="NoWrap" AcceptsReturn="False" Text="{Binding SelectedItem.RepairCommandline, ElementName=lvSelectedApps, Mode=TwoWay}" Margin="5,0" MinWidth="260"/>
                         <Label x:Name="lDestinationFolder" Content="Destination folder" VerticalAlignment="Top"/>
                         <TextBox x:Name="tbDestinationFolder" TextWrapping="NoWrap" AcceptsReturn="False" Text="{Binding SelectedItem.DestinationFolder, ElementName=lvSelectedApps, Mode=TwoWay}" Margin="5,0" MinWidth="260"/>
                         <CheckBox x:Name="cbTeamsPostImport" Content="Post import on Teams channel" IsChecked="{Binding SelectedItem.TeamsPostImport, ElementName=lvSelectedApps, Mode=TwoWay}" Width="300" Height="15" Margin="5,5" HorizontalAlignment="Left"/>
@@ -122,20 +124,22 @@
                     <TextBox x:Name="tbDefaultUninstallCommandline" Grid.Row="12" Grid.Column="1" />
                     <Label x:Name="lDefaultInstallCommandline" Grid.Row="13" Content="Default install commandline" />
                     <TextBox x:Name="tbDefaultInstallCommandline" Grid.Row="13" Grid.Column="1" />
-                    <Label x:Name="lAppTestCollectionID" Grid.Row="14" Content="Collection ID of app test" />
-                    <TextBox x:Name="tbAppTestCollectionID" Grid.Row="14" Grid.Column="1" />
-                    <Label x:Name="lDistributionPointGroup" Grid.Row="15" Content="Name of distributionpoint group" />
-                    <TextBox x:Name="tbDistributionPointGroup" Grid.Row="15" Grid.Column="1" />
-                    <Label x:Name="lDefaultDestinationFolder" Grid.Row="16" Content="Path to folder where applications end up" />
-                    <TextBox x:Name="tbDefaultDestinationFolder" Grid.Row="16" Grid.Column="1" />
-                    <Label x:Name="lRequiredCollectionFolder" Grid.Row="17" Content="Path to folder where required applicationscollections end up" />
-                    <TextBox x:Name="tbRequiredCollectionFolder" Grid.Row="17" Grid.Column="1" />
-                    <Label x:Name="lAvailableCollectionFolder" Grid.Row="18" Content="Path to folder where optional applicationscollections end up" />
-                    <TextBox x:Name="tbAvailableCollectionFolder" Grid.Row="18" Grid.Column="1" />
-                    <Label x:Name="lRegDetectionKeyPath" Grid.Row="19" Content="Path to key where detection data should be stored" />
-                    <TextBox x:Name="tbRegDetectionKeyPath" Grid.Row="19" Grid.Column="1" />
-                    <Label x:Name="lRegDetectionValueName" Grid.Row="20" Content="Name of the value in which version is stored" />
-                    <TextBox x:Name="tbRegDetectionValueName" Grid.Row="20" Grid.Column="1" />
+                    <Label x:Name="lDefaultRepairCommandline" Grid.Row="14" Content="Default install commandline" />
+                    <TextBox x:Name="tbDefaultRepairCommandline" Grid.Row="14" Grid.Column="1" />
+                    <Label x:Name="lAppTestCollectionID" Grid.Row="15" Content="Collection ID of app test" />
+                    <TextBox x:Name="tbAppTestCollectionID" Grid.Row="15" Grid.Column="1" />
+                    <Label x:Name="lDistributionPointGroup" Grid.Row="16" Content="Name of distributionpoint group" />
+                    <TextBox x:Name="tbDistributionPointGroup" Grid.Row="16" Grid.Column="1" />
+                    <Label x:Name="lDefaultDestinationFolder" Grid.Row="17" Content="Path to folder where applications end up" />
+                    <TextBox x:Name="tbDefaultDestinationFolder" Grid.Row="17" Grid.Column="1" />
+                    <Label x:Name="lRequiredCollectionFolder" Grid.Row="18" Content="Path to folder where required applicationscollections end up" />
+                    <TextBox x:Name="tbRequiredCollectionFolder" Grid.Row="18" Grid.Column="1" />
+                    <Label x:Name="lAvailableCollectionFolder" Grid.Row="19" Content="Path to folder where optional applicationscollections end up" />
+                    <TextBox x:Name="tbAvailableCollectionFolder" Grid.Row="19" Grid.Column="1" />
+                    <Label x:Name="lRegDetectionKeyPath" Grid.Row="20" Content="Path to key where detection data should be stored" />
+                    <TextBox x:Name="tbRegDetectionKeyPath" Grid.Row="20" Grid.Column="1" />
+                    <Label x:Name="lRegDetectionValueName" Grid.Row="21" Content="Name of the value in which version is stored" />
+                    <TextBox x:Name="tbRegDetectionValueName" Grid.Row="21" Grid.Column="1" />
                 </Grid>
             </TabItem>
         </TabControl>

@@ -2,7 +2,7 @@
 $DebugPreference = "SilentlyContinue"
 
 ## Current version
-$Global:Version = "1.2.3.0"
+$Global:Version = "1.2.4.0"
 
 ##############################
 $InstalledPath = $PSScriptRoot
@@ -61,6 +61,7 @@ try {
     $syncHash.RequiredCollectionFolder = Get-Config 'RequiredCollectionFolder'
     $syncHash.AvailableCollectionFolder = Get-Config 'AvailableCollectionFolder'
     $syncHash.DefaultInstallCommandline = Get-Config 'DefaultInstallCommandline'
+    $syncHash.DefaultRepairCommandline = Get-Config 'DefaultRepairCommandline'
     $syncHash.DefaultUninstallCommandline = Get-Config 'DefaultUninstallCommandline'
     $syncHash.DefaultDestinationFolder = Get-Config 'DefaultDestinationFolder'
     $syncHash.TeamsChannelName = Get-Config 'TeamsChannelName'
@@ -116,6 +117,7 @@ $psCmd = [PowerShell]::Create().AddScript({
     $syncHash.tbDistributionPointGroup.Text = $syncHash.DistributionPointGroup
     $syncHash.tbAppTestCollectionID.Text = $syncHash.AppTestCollectionID
     $syncHash.tbDefaultInstallCommandline.Text = $syncHash.DefaultInstallCommandline
+    $syncHash.tbDefaultRepairCommandline.Text = $syncHash.DefaultRepairCommandline
     $syncHash.tbDefaultUninstallCommandline.Text = $syncHash.DefaultUninstallCommandline
     $syncHash.tbDefaultDestinationFolder.Text = $syncHash.DefaultDestinationFolder
     $syncHash.tbTeamsChannelName.Text = $syncHash.TeamsChannelName
@@ -160,6 +162,7 @@ Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.Gene
 Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.tbTeamsChannelName, $null, @{type='tb';SettingName="TeamsChannelName"}) } -Element tbTeamsChannelName -Event KeyUp
 Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.tbDefaultUninstallCommandline, $null, @{type='tb';SettingName="DefaultUninstallCommandline"}) } -Element tbDefaultUninstallCommandline -Event KeyUp
 Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.tbDefaultInstallCommandline, $null, @{type='tb';SettingName="DefaultInstallCommandline"}) } -Element tbDefaultInstallCommandline -Event KeyUp
+Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.tbDefaultRepairCommandline, $null, @{type='tb';SettingName="DefaultRepairCommandline"}) } -Element tbDefaultInstallCommandline -Event KeyUp
 Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.tbDefaultDestinationFolder, $null, @{type='tb';SettingName="DefaultDestinationFolder"}) } -Element tbDefaultDestinationFolder -Event KeyUp
 Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.tbAppTestCollectionID, $null, @{type='tb';SettingName="AppTestCollectionID"}) } -Element tbAppTestCollectionID -Event KeyUp
 Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.tbDistributionPointGroup, $null, @{type='tb';SettingName="DistributionPointGroup"}) } -Element tbDistributionPointGroup -Event KeyUp
@@ -203,6 +206,7 @@ Get-NotImporteredApplications -ApplicationFolder $syncHash.AppPath | ForEach-Obj
     $obj | Add-Member Path $_.Path
     $obj | Add-Member AppName $_.NameAndVersion
     $obj | Add-Member InstallCommandline $syncHash.DefaultInstallCommandline
+    $obj | Add-Member RepairCommandline $syncHash.DefaultRepairCommandline
     $obj | Add-Member UninstallCommandline $syncHash.DefaultUninstallCommandline
     $obj | Add-Member TeamsPostImport $syncHash.DefaultTeamsPostImport
 
