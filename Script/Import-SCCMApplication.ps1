@@ -375,6 +375,19 @@ function Global:Import-SCCMApplication {
                 -RebootBehavior BasedOnExitCode ` | Out-Null
             #>
             $NewCMApplication | Add-CMScriptDeploymentType @AddCMScriptDeploymentTypeParameters | Out-Null
+
+            if (-not ([string]::IsNullOrEmpty($ImportApplication.RepairCommandline))) {
+                # This is what we want to run but the cmdlet does not have this option yet
+                #$AddCMScriptDeploymentTypeParameters.Add('RepairCommand',$ImportApplication.RepairCommandline)
+                # This is what we run instead
+                Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Set repaircommandline"
+                $TempApplication = Get-CMApplication -Name $ImportApplication.AppName | Convert-CMApplication
+                $TempApplication.DeploymentTypes[0].Installer.RepairCommandLine = $ImportApplication.RepairCommandline
+                $TempApplication = $TempApplication | ConvertFrom-CMApplication
+                $TempApplication.Put()
+                $NewCMApplication = Get-CMApplication -Name $ImportApplication.AppName
+            }
+
             # HIG-modification. GSR 190917. -RequireUserInteraction switch with add-cmscriptdeploymenttype, boolean with set-cmscriptdeploymenttype
             if ($UserInteraction -eq "true") {
                 Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Set allow user interaction true"
