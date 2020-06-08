@@ -285,7 +285,7 @@ function Global:Import-SCCMApplication {
 
             $NewCMApplication = ($CMPreviousApplication | ConvertTo-CMApplication).Copy()
             $NewCMApplication.SoftwareVersion = $AppInfo.Version
-            $NewCMApplication.Title = $NewCMApplication.Title -replace $CMPreviousApplication.SoftwareVersion, $AppInfo.Version
+            $NewCMApplication.Title = $ImportApplication.AppName
             $NewCMApplication.Name = $NewCMApplication.CreateNewId().Name
             $NewCMApplication.Contacts[0].Id = $env:USERNAME
             $NewCMApplication.Owners[0].Id = $env:USERNAME
@@ -294,6 +294,8 @@ function Global:Import-SCCMApplication {
             $NewCMApplication.DeploymentTypes.RemoveAt(0)
             $NewCMApplication = $NewCMApplication | ConvertFrom-CMApplication
             $NewCMApplication.Put()
+            # Make sure the new information is saved before reading it again
+            Start-Sleep -Seconds 1
             $NewCMApplication = Get-CMApplication -Name $ImportApplication.AppName
             <#
             
