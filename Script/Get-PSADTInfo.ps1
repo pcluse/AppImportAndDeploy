@@ -21,9 +21,17 @@ Function Global:Get-PSADTInfo {
         $Path
     )
     $installScriptPath = Join-Path -Path $Path -ChildPath "Deploy-Application.ps1"
+    $configFilePath = Join-Path -Path $Path -ChildPath "AppDeployToolkit\AppDeployToolkitConfig.xml"
+    
+
     if (-not (Test-Path -Path FileSystem::$installScriptPath)) {
         return $null
     }
+    if (-not (Test-Path -Path FileSystem::$configFilePath)) {
+        return $null
+    }
+
+    $configFileXML = [xml](Get-Content -Path "FileSystem::$configFilePath" -Raw)
     $content = Get-Content "FileSystem::$installScriptPath" -Raw
 
     $Name = ""
@@ -43,7 +51,7 @@ Function Global:Get-PSADTInfo {
     If ($content -match '.*Add-SCCMDetectionData') {
         $RegistryDetection = $true
     }
-
+    
     [char[]]$invalidFileNameChars = [IO.Path]::GetInvalidFileNameChars()
     [string]$NameMangled = $Name -replace "[$invalidFileNameChars]",'' -replace ' ',''
 
@@ -53,6 +61,7 @@ Function Global:Get-PSADTInfo {
                 Version   = $Version            
                 Vendor =  $Vendor
                 RegistryDetection = $RegistryDetection
+                RunAsAdmin = $configFileXML.AppDeployToolkit_Config.Toolkit_Options.Toolkit_RequireAdmin
             }
     Write-Output $Object
 }
