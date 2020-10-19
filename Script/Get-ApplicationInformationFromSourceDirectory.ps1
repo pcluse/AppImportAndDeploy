@@ -63,6 +63,7 @@ function Global:Get-ApplicationInformationFromSourceDirectory {
             $AppInfo | Add-Member 'PSADTVersion' $PSADTInfo.Version
             $AppInfo | Add-Member 'PSADTVendor'  $PSADTInfo.Vendor
             $AppInfo | Add-Member 'PSADTRegistryDetection' $PSADTInfo.RegistryDetection
+            $AppInfo | Add-Member 'RunAsAdmin' $PSADTInfo.RunAsAdmin
         }
         else {
             #$AppInfo | Add-Member 'InstallCommandline' 'Need to change this'
@@ -71,6 +72,7 @@ function Global:Get-ApplicationInformationFromSourceDirectory {
             $AppInfo | Add-Member 'PSADTVersion' ''
             $AppInfo | Add-Member 'PSADTVendor'  ''
             $AppInfo | Add-Member 'PSADTRegistryDetection' $false
+            $AppInfo | Add-Member 'RunAsAdmin' $false
         }
 
         $AppInfo | Add-Member 'MSIInfo' (Get-ChildItem -ErrorAction SilentlyContinue -LiteralPath "FileSystem::$Path\Files" -Filter '*.msi' | ForEach-Object {
