@@ -212,9 +212,15 @@ function Global:Import-SCCMApplication {
     } 
 #>
 
+    if ($AppInfo.RunAsAdmin) {
+        $RegHive = "HKEY_LOCAL_MACHINE"
+    }
+    else {
+        $RegHive = "HKEY_CURRENT_USER"
+    }
     # HIG-Modification GSR 2019-10-08
     $RegistryDetection = New-Object PSObject @{
-        Key    = "HKLM:\" + (Get-Config -key 'RegDetectionKeyPath') + $appinfo.Name
+        Key    = "Registry::$RegHive\" + (Get-Config -key 'RegDetectionKeyPath') + $appinfo.Name
         SubKey = (Get-Config -key 'RegDetectionKeyPath') + $appinfo.Name
         ValueName  = (Get-Config -key 'RegDetectionValueName')
         ValueData = $appinfo.Version
