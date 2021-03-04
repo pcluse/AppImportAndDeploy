@@ -100,46 +100,49 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition />
                     </Grid.ColumnDefinitions>
                     <CheckBox x:Name="cbDefaultDeployToTestCollection" Content="Deploy To Test" />
-                    <CheckBox x:Name="cbDefaultDeploymentUpdateSupersedence" Content="Update superseded applications by default (during deployment to test collection)" Grid.Row="1" />
+                    <CheckBox x:Name="cbDefaultDeploymentUpdateSupersedence" Content="Update superseded applications by default (AppTest)" Grid.Row="1" />
                     <CheckBox x:Name="cbDefaultTeamsPostImport" Content="Post to teams" Grid.Row="2" />
                     <TextBox x:Name="tbTeamsChannelUrl" MaxWidth="350" Grid.Row="2" Grid.Column="3" />
                     <CheckBox x:Name="cbDefaultOnlyPlaceholderDetectionRule" Content="Only create placeholder detection rule" Grid.Row="4" />
                     <CheckBox x:Name="cbDefaultUpdateDependencies" Content="Update dependencies by default" Grid.Row="5" />
                     <CheckBox x:Name="cbDefaultUpdateSupersedence" Content="Update supersedence by default" Grid.Row="6" />
-                    <CheckBox x:Name="cbDefaultUninstallPrevious" Content="Uninstall previous version by default" Grid.Row="7" />
-                    <CheckBox x:Name="cbDryRun" Content="Dry run" Grid.Row="8" />
-                    <Label x:Name="lSCCMSiteServer" Content="Siteserver FQDN" Grid.Row="9" />
-                    <TextBox x:Name="tbSCCMSiteServer" Grid.Row="9" Grid.Column="1" />
-                    <Label x:Name="lAppPath" Grid.Row="10" Content="Path to applicationshare" />
-                    <TextBox x:Name="tbAppPath" Grid.Row="10" Grid.Column="1" />
-                    <Label x:Name="lTeamsChannelName" Grid.Row="11" Content="Name of channel in teams" />
-                    <TextBox x:Name="tbTeamsChannelName" Grid.Row="11" Grid.Column="1" />
-                    <Label x:Name="lDefaultUninstallCommandline" Grid.Row="12" Content="Default uninstall commandline" />
-                    <TextBox x:Name="tbDefaultUninstallCommandline" Grid.Row="12" Grid.Column="1" />
-                    <Label x:Name="lDefaultInstallCommandline" Grid.Row="13" Content="Default install commandline" />
-                    <TextBox x:Name="tbDefaultInstallCommandline" Grid.Row="13" Grid.Column="1" />
-                    <Label x:Name="lDefaultRepairCommandline" Grid.Row="14" Content="Default install commandline" />
-                    <TextBox x:Name="tbDefaultRepairCommandline" Grid.Row="14" Grid.Column="1" />
-                    <Label x:Name="lAppTestCollectionID" Grid.Row="15" Content="Collection ID of app test" />
-                    <TextBox x:Name="tbAppTestCollectionID" Grid.Row="15" Grid.Column="1" />
-                    <Label x:Name="lDistributionPointGroup" Grid.Row="16" Content="Name of distributionpoint group" />
-                    <TextBox x:Name="tbDistributionPointGroup" Grid.Row="16" Grid.Column="1" />
-                    <Label x:Name="lDefaultDestinationFolder" Grid.Row="17" Content="Path to folder where applications end up" />
-                    <TextBox x:Name="tbDefaultDestinationFolder" Grid.Row="17" Grid.Column="1" />
-                    <Label x:Name="lRequiredCollectionFolder" Grid.Row="18" Content="Path to folder where required applicationscollections end up" />
-                    <TextBox x:Name="tbRequiredCollectionFolder" Grid.Row="18" Grid.Column="1" />
-                    <Label x:Name="lAvailableCollectionFolder" Grid.Row="19" Content="Path to folder where optional applicationscollections end up" />
-                    <TextBox x:Name="tbAvailableCollectionFolder" Grid.Row="19" Grid.Column="1" />
-                    <Label x:Name="lRegDetectionKeyPath" Grid.Row="20" Content="Path to key where detection data should be stored" />
-                    <TextBox x:Name="tbRegDetectionKeyPath" Grid.Row="20" Grid.Column="1" />
-                    <Label x:Name="lRegDetectionValueName" Grid.Row="21" Content="Name of the value in which version is stored" />
-                    <TextBox x:Name="tbRegDetectionValueName" Grid.Row="21" Grid.Column="1" />
+                    <CheckBox x:Name="cbSkipExpired" Content="Skip retired applications in supersedence" Grid.Row="7" />
+                    <CheckBox x:Name="cbDefaultUninstallPrevious" Content="Uninstall previous version by default" Grid.Row="8" />
+                    <CheckBox x:Name="cbDryRun" Content="Dry run" Grid.Row="9" />
+                    <Label x:Name="lSCCMSiteServer" Content="Siteserver FQDN" Grid.Row="10" />
+                    <TextBox x:Name="tbSCCMSiteServer" Grid.Row="10" Grid.Column="1" />
+                    <Label x:Name="lAppPath" Grid.Row="11" Content="Path to applicationshare" />
+                    <TextBox x:Name="tbAppPath" Grid.Row="11" Grid.Column="1" />
+                    <Label x:Name="lTeamsChannelName" Grid.Row="12" Content="Name of channel in teams" />
+                    <TextBox x:Name="tbTeamsChannelName" Grid.Row="12" Grid.Column="1" />
+                    <Label x:Name="lDefaultUninstallCommandline" Grid.Row="13" Content="Default uninstall commandline" />
+                    <TextBox x:Name="tbDefaultUninstallCommandline" Grid.Row="13" Grid.Column="1" />
+                    <Label x:Name="lDefaultInstallCommandline" Grid.Row="14" Content="Default install commandline" />
+                    <TextBox x:Name="tbDefaultInstallCommandline" Grid.Row="14" Grid.Column="1" />
+                    <Label x:Name="lDefaultRepairCommandline" Grid.Row="15" Content="Default install commandline" />
+                    <TextBox x:Name="tbDefaultRepairCommandline" Grid.Row="15" Grid.Column="1" />
+                    <Label x:Name="lAppTestCollectionID" Grid.Row="16" Content="Collection ID of app test" />
+                    <TextBox x:Name="tbAppTestCollectionID" Grid.Row="16" Grid.Column="1" />
+                    <Label x:Name="lDistributionPointGroup" Grid.Row="17" Content="Name of distributionpoint group" />
+                    <TextBox x:Name="tbDistributionPointGroup" Grid.Row="17" Grid.Column="1" />
+                    <Label x:Name="lDefaultDestinationFolder" Grid.Row="18" Content="Path to folder where applications end up" />
+                    <TextBox x:Name="tbDefaultDestinationFolder" Grid.Row="18" Grid.Column="1" />
+                    <Label x:Name="lRequiredCollectionFolder" Grid.Row="19" Content="Path to folder where required applicationscollections end up" />
+                    <TextBox x:Name="tbRequiredCollectionFolder" Grid.Row="19" Grid.Column="1" />
+                    <Label x:Name="lAvailableCollectionFolder" Grid.Row="20" Content="Path to folder where optional applicationscollections end up" />
+                    <TextBox x:Name="tbAvailableCollectionFolder" Grid.Row="20" Grid.Column="1" />
+                    <Label x:Name="lRegDetectionKeyPath" Grid.Row="21" Content="Path to Registry key where detection data should be stored" />
+                    <TextBox x:Name="tbRegDetectionKeyPath" Grid.Row="21" Grid.Column="1" />
+                    <Label x:Name="lRegDetectionValueName" Grid.Row="22" Content="Name of the registry value in which version is stored" />
+                    <TextBox x:Name="tbRegDetectionValueName" Grid.Row="22" Grid.Column="1" />
                 </Grid>
             </TabItem>
         </TabControl>
