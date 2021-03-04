@@ -147,9 +147,9 @@ function Global:Get-AppDeploymentTypeInteraction {
     param($Application)
 
     $DeploymentTypeName = "$($Application.LocalizedDisplayName) PSADT"
-    [xml]$xml = ($Application | Get-CMDeploymentType -DeploymentTypeName $DeploymentTypeName | select SDMPackageXML).SDMPackageXML
+    [xml]$xml = ($Application | Get-CMDeploymentType -DeploymentTypeName $DeploymentTypeName | Select-Object SDMPackageXML).SDMPackageXML
     $deployTypeArgs =  $xml.ChildNodes.DeploymentType.Installer.InstallAction.Args.Arg
-    $UserInteraction =  ($deployTypeArgs| where {$_.name -eq "RequiresUserInteraction"}).'#text'
+    $UserInteraction =  ($deployTypeArgs| Where-Object {$_.name -eq "RequiresUserInteraction"}).'#text'
     return $UserInteraction
 }
 
@@ -233,13 +233,18 @@ function Global:Import-SCCMApplication {
 
 
     $ImportedApplicationVersion = Get-Version $AppInfo.Version
-    $CMImportedApplications = Get-CMApplication -Name "$($ImportApplication.Name) v*"
-
+    if ((Get-Config -key 'SkipExpired')) {
+        $CMImportedApplications = Get-CMApplication -Name "$($ImportApplication.Name) v*" | Where-Object { -not $_.IsExpired }
+    }
+    else {
+        $CMImportedApplications = Get-CMApplication -Name "$($ImportApplication.Name) v*"
+    }
+    
     If ($CMImportedApplications) {
         $CMPreviousApplication = $CMImportedApplications | Where-Object {
             (Get-Version $_.SoftwareVersion) -lt $ImportedApplicationVersion
         } | Sort-Object -Property @{Expression={Get-Version $_.SoftwareVersion}} | Select-Object -Last 1
-
+        
         $CMNextApplication = $CMImportedApplications | Where-Object {
             (Get-Version $_.SoftwareVersion) -gt $ImportedApplicationVersion
         } | Sort-Object -Property @{Expression={Get-Version $_.SoftwareVersion}} | Select-Object -First 1
@@ -252,6 +257,9 @@ function Global:Import-SCCMApplication {
     If ($CMPreviousApplication) {
         $isNewApplication = $false
         Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Found previous version $($CMPreviousApplication.LocalizedDisplayName)"
+        if ($CMPreviousApplication.IsExpired) {
+            Write-Todolog -syncHash $syncHash -Text "$($ImportApplication.AppName): Previous version is retired, need to manually set/fix supersedence!"
+        }
     }
     If ($CMNextApplication) {
         Write-Todolog -syncHash $syncHash -Text "$($ImportApplication.AppName): Found NEWER version $($CMNextApplication.LocalizedDisplayName). Update it's supersedence"

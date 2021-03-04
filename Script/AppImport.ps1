@@ -72,6 +72,7 @@ try {
     $syncHash.DryRun = [bool]::parse((Get-Config 'DryRun'))
     $syncHash.AppTestCollectionName = ((Get-SCCMCollectionInfo -SiteServer $syncHash.SCCMSiteServer -Namespace (Global:Get-Config -key 'WMINamespace') -CollectionID $syncHash.AppTestCollectionID).Name)
     $syncHash.Version = $Version
+    $syncHash.SkipExpired = [bool]::parse((Get-Config 'SkipExpired'))
 } catch {
     $Error[0] | Out-Host
     Show-Error -Message $Error[0].ToString()
@@ -128,6 +129,7 @@ $psCmd = [PowerShell]::Create().AddScript({
     $syncHash.tbRegDetectionValueName.Text = $syncHash.RegDetectionValueName
     $syncHash.cbDefaultTeamsPostImport.IsChecked = $syncHash.DefaultTeamsPostImport
     $syncHash.cbDryRun.IsChecked = $syncHash.DryRun
+    $syncHash.cbSkipExpired.IsChecked = $syncHash.SkipExpired
 
     # Set source of list
     $syncHash.lvSelectedApps.ItemsSource = $syncHash.appsToImport
@@ -171,6 +173,7 @@ Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.Gene
 Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.tbRegDetectionKeyPath, $null, @{type='tb';SettingName="RegDetectionKeyPath"}) } -Element tbRegDetectionKeyPath -Event KeyUp
 Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.tbRegDetectionValueName, $null, @{type='tb';SettingName="RegDetectionValueName"}) } -Element tbRegDetectionValueName -Event KeyUp
 Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.bImport, $null, @{type="import"}) } -Element bImport -Event Click
+Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.cbSkipExpired, $null, @{type='cb';SettingName="SkipExpired"}) } -Element cbSkipExpired -Event Click
 Add-Eventhandler -syncHash $syncHash -Code {
     $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.Window, $null, @{type="closing"})
 } -Element Window -Event Closing
