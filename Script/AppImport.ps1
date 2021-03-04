@@ -2,7 +2,7 @@
 $DebugPreference = "SilentlyContinue"
 
 ## Current version
-$Global:Version = "1.2.4.0"
+$Global:Version = "1.2.5.0"
 
 ##############################
 $InstalledPath = $PSScriptRoot
