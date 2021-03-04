@@ -61,7 +61,7 @@ Function Global:Get-PSADTInfo {
                 Version   = $Version            
                 Vendor =  $Vendor
                 RegistryDetection = $RegistryDetection
-                RunAsAdmin = $configFileXML.AppDeployToolkit_Config.Toolkit_Options.Toolkit_RequireAdmin
+                RunAsAdmin = [bool]::Parse($configFileXML.AppDeployToolkit_Config.Toolkit_Options.Toolkit_RequireAdmin)
             }
     Write-Output $Object
 }

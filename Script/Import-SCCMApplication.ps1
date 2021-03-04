@@ -153,6 +153,19 @@ function Global:Get-AppDeploymentTypeInteraction {
     return $UserInteraction
 }
 
+function Global:Get-ConfigMgrHiveName {
+    param(
+        $HiveName
+    )
+    switch ($HiveName) {
+        'HKEY_CURRENT_USER' {
+            'CurrentUser'
+        }
+        'HKEY_LOCAL_MACHINE' {
+            'LocalMachine'
+        }
+    }
+}
 
 function Global:Import-SCCMApplication {
     param(
@@ -371,6 +384,10 @@ function Global:Import-SCCMApplication {
                 RebootBehavior = 'BasedOnExitCode'
             }
 
+            if (-not $AppInfo.RunAsAdmin) {
+                $AddCMScriptDeploymentTypeParameters.InstallationBehaviorType = 'InstallForUser'
+            }
+
             if (-not ([string]::IsNullOrEmpty($ImportApplication.InstallCommandline))) {
                 $AddCMScriptDeploymentTypeParameters.Add('InstallCommand',$ImportApplication.InstallCommandline)
             }
@@ -425,18 +442,10 @@ function Global:Import-SCCMApplication {
     # Detection
     if (-not $ImportApplication.OnlyPlaceholderDetectionRule) {
 
-<#        
-        if ($AppInfo.PSADTRegistryDetection) {
-            Write-Worklog -syncHash $syncHash -Text "Added SCCMDetection detection rule"
-            $DetectionClause = New-CMDetectionClauseRegistryKeyValue -Hive LocalMachine -KeyName "Software\PLS\$($AppInfo.PSADTNameMangled)" `
-                -Value -ValueName $null -ExpectedValue $AppInfo.PSADTVersion -PropertyType String -ExpressionOperator IsEquals
-            $DetectionClauses.Add($DetectionClause) | Out-Null
-        }
-#>
         # HIG-Modification GSR 2019-10-08
         if ($AppInfo.PSADTRegistryDetection) {
             Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Added SCCMDetection detection rule"
-            $DetectionClause = New-CMDetectionClauseRegistryKeyValue -Hive LocalMachine -KeyName "$($RegistryDetection.SubKey)" `
+            $DetectionClause = New-CMDetectionClauseRegistryKeyValue -Hive (Get-ConfigMgrHiveName -HiveName $RegHive) -KeyName "$($RegistryDetection.SubKey)" `
                 -Value -ValueName $($RegistryDetection.ValueName) -ExpectedValue $($RegistryDetection.ValueData) -PropertyType String -ExpressionOperator IsEquals
             $DetectionClauses.Add($DetectionClause) | Out-Null
         }
@@ -469,7 +478,10 @@ function Global:Import-SCCMApplication {
                 switch ($PreviousRule.Type) {
                     # GSR 2019-10-10 TOTO. Måste anapassas till nya Add-SCCM-detectionData
                     'RegistryKeyValue' {
-                            #if ( $PreviousRule.KeyName -ne "Software\PLS\$($AppInfo.PSADTNameMangled)") {  # HIG-Modification GSR 2019-10-10
+                            if ($PreviousRule.Hive -ne (Get-ConfigMgrHiveName -HiveName $RegHive)) {
+                                Write-Todolog -syncHash $syncHash -Text "$($ImportApplication.AppName): Previous registry rule uses a different hive. Expected $((Get-ConfigMgrHiveName -HiveName $RegHive)) but is $($PreviousRule.Hive)"
+                            }
+
                             if ( $PreviousRule.KeyName -ne $($RegistryDetection.SubKey)) {
                                 $Args['ExpectedValue'] = $Args['ExpectedValue'] -replace $CMPreviousApplication.SoftwareVersion,$AppInfo.Version
                                 $DetectionClause = New-CMDetectionClauseRegistryKeyValue @Args
@@ -478,6 +490,9 @@ function Global:Import-SCCMApplication {
                             }
                         }
                     'RegistryKey' {
+                            if ($PreviousRule.Hive -ne (Get-ConfigMgrHiveName -HiveName $RegHive)) {
+                                Write-Todolog -syncHash $syncHash -Text "$($ImportApplication.AppName): Previous registry rule uses a different hive. Expected $((Get-ConfigMgrHiveName -HiveName $RegHive)) but is $($PreviousRule.Hive)"
+                            }
                             $DetectionClause = New-CMDetectionClauseRegistryKey @Args
                             Write-Worklog -syncHash $syncHash -Text "$($ImportApplication.AppName): Added Registrykey detection rule"
                             CheckAndWarnIfVersion -syncHash $syncHash -AppName $ImportApplication.AppName -DetectionRule $Args
