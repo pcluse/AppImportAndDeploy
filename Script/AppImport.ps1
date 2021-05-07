@@ -59,7 +59,9 @@ try {
     $syncHash.DistributionPointGroup = Get-Config 'DistributionPointGroup'
     $syncHash.AppTestCollectionID = Get-Config 'TestCollectionID'
     $syncHash.RequiredCollectionFolder = Get-Config 'RequiredCollectionFolder'
+    $syncHash.RequiredCollectionSuffix = Get-Config 'RequiredCollectionSuffix'
     $syncHash.AvailableCollectionFolder = Get-Config 'AvailableCollectionFolder'
+    $syncHash.AvailableCollectionSuffix = Get-Config 'AvailableCollectionSuffix'
     $syncHash.DefaultInstallCommandline = Get-Config 'DefaultInstallCommandline'
     $syncHash.DefaultRepairCommandline = Get-Config 'DefaultRepairCommandline'
     $syncHash.DefaultUninstallCommandline = Get-Config 'DefaultUninstallCommandline'
@@ -124,7 +126,9 @@ $psCmd = [PowerShell]::Create().AddScript({
     $syncHash.tbTeamsChannelName.Text = $syncHash.TeamsChannelName
     $syncHash.tbTeamsChannelUrl.Text = $syncHash.TeamsChannelUrl
     $syncHash.tbRequiredCollectionFolder.Text = $syncHash.RequiredCollectionFolder
+    $syncHash.tbRequiredCollectionSuffix.Text = $syncHash.RequiredCollectionSuffix
     $syncHash.tbAvailableCollectionFolder.Text = $syncHash.AvailableCollectionFolder
+    $syncHash.tbAvailableCollectionSuffix.Text = $syncHash.AvailableCollectionSuffix
     $syncHash.tbRegDetectionKeyPath.Text = $syncHash.RegDetectionKeyPath
     $syncHash.tbRegDetectionValueName.Text = $syncHash.RegDetectionValueName
     $syncHash.cbDefaultTeamsPostImport.IsChecked = $syncHash.DefaultTeamsPostImport
@@ -169,7 +173,9 @@ Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.Gene
 Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.tbAppTestCollectionID, $null, @{type='tb';SettingName="AppTestCollectionID"}) } -Element tbAppTestCollectionID -Event KeyUp
 Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.tbDistributionPointGroup, $null, @{type='tb';SettingName="DistributionPointGroup"}) } -Element tbDistributionPointGroup -Event KeyUp
 Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.tbRequiredCollectionFolder, $null, @{type='tb';SettingName="RequiredCollectionFolder"}) } -Element tbRequiredCollectionFolder -Event KeyUp
+Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.tbRequiredCollectionSuffix, $null, @{type='tb';SettingName="RequiredCollectionSuffix"}) } -Element tbRequiredCollectionFolder -Event KeyUp
 Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.tbAvailableCollectionFolder, $null, @{type='tb';SettingName="AvailableCollectionFolder"}) } -Element tbAvailableCollectionFolder -Event KeyUp
+Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.tbAvailableCollectionSuffix, $null, @{type='tb';SettingName="AvailableCollectionSuffix"}) } -Element tbRequiredCollectionFolder -Event KeyUp
 Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.tbRegDetectionKeyPath, $null, @{type='tb';SettingName="RegDetectionKeyPath"}) } -Element tbRegDetectionKeyPath -Event KeyUp
 Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.tbRegDetectionValueName, $null, @{type='tb';SettingName="RegDetectionValueName"}) } -Element tbRegDetectionValueName -Event KeyUp
 Add-Eventhandler -syncHash $syncHash -Code { $syncHash.Host.Runspace.Events.GenerateEvent($syncHash.SI, $syncHash.bImport, $null, @{type="import"}) } -Element bImport -Event Click
