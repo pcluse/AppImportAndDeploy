@@ -93,8 +93,13 @@ try {
             Show-Error "Application name don't match XXXX v9... structure. Deploy stopped"
             break
         }
-        $Parameters.Add('CollectionName',$Matches[1])
-        $CollectionID = (Get-CMDeviceCollection -ErrorAction SilentlyContinue -Name $Matches[1]).CollectionID
+        $CollectionName = $Matches[1]
+        $CollectionSuffix = Get-Config 'RequiredCollectionSuffix'
+        if (-not [string]::IsNullOrEmpty($CollectionSuffix)) {
+            $CollectionName = "{0} {1}" -f $CollectionName,$CollectionSuffix
+        }
+        $Parameters.Add('CollectionName',$CollectionName)
+        $CollectionID = (Get-CMDeviceCollection -ErrorAction SilentlyContinue -Name $CollectionName).CollectionID
         if ($CollectionID) {
             $Parameters.Add('CollectionID',$CollectionID)
         }
@@ -112,8 +117,13 @@ try {
             Show-Error "Application name don't match XXXX v9... structure. Deploy stopped"
             break
         }
-        $Parameters.Add('CollectionName',$Matches[1])
-        $CollectionID = (Get-CMDeviceCollection -ErrorAction SilentlyContinue -Name $Matches[1]).CollectionID
+        $CollectionName = $Matches[1]
+        $CollectionSuffix = Get-Config 'AvailableCollectionSuffix'
+        if (-not [string]::IsNullOrEmpty($CollectionSuffix)) {
+            $CollectionName = "{0} {1}" -f $CollectionName,$CollectionSuffix
+        }
+        $Parameters.Add('CollectionName',$CollectionName)
+        $CollectionID = (Get-CMDeviceCollection -ErrorAction SilentlyContinue -Name $CollectionName).CollectionID
         if ($CollectionID) {
             $Parameters.Add('CollectionID',$CollectionID)
         }		

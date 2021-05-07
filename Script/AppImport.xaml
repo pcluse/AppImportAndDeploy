@@ -102,6 +102,8 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -137,12 +139,16 @@
                     <TextBox x:Name="tbDefaultDestinationFolder" Grid.Row="18" Grid.Column="1" />
                     <Label x:Name="lRequiredCollectionFolder" Grid.Row="19" Content="Path to folder where required applicationscollections end up" />
                     <TextBox x:Name="tbRequiredCollectionFolder" Grid.Row="19" Grid.Column="1" />
-                    <Label x:Name="lAvailableCollectionFolder" Grid.Row="20" Content="Path to folder where optional applicationscollections end up" />
-                    <TextBox x:Name="tbAvailableCollectionFolder" Grid.Row="20" Grid.Column="1" />
-                    <Label x:Name="lRegDetectionKeyPath" Grid.Row="21" Content="Path to Registry key where detection data should be stored" />
-                    <TextBox x:Name="tbRegDetectionKeyPath" Grid.Row="21" Grid.Column="1" />
-                    <Label x:Name="lRegDetectionValueName" Grid.Row="22" Content="Name of the registry value in which version is stored" />
-                    <TextBox x:Name="tbRegDetectionValueName" Grid.Row="22" Grid.Column="1" />
+                    <Label x:Name="lRequiredCollectionSuffix" Grid.Row="20" Content="Suffix added to collection name of an required deployment" />
+                    <TextBox x:Name="tbRequiredCollectionSuffix" Grid.Row="20" Grid.Column="1" />
+                    <Label x:Name="lAvailableCollectionFolder" Grid.Row="21" Content="Path to folder where optional applicationscollections end up" />
+                    <TextBox x:Name="tbAvailableCollectionFolder" Grid.Row="21" Grid.Column="1" />
+                    <Label x:Name="lAvailableCollectionSuffix" Grid.Row="22" Content="Suffix added to collection name of an optional deployment" />
+                    <TextBox x:Name="tbAvailableCollectionSuffix" Grid.Row="22" Grid.Column="1" />
+                    <Label x:Name="lRegDetectionKeyPath" Grid.Row="23" Content="Path to Registry key where detection data should be stored" />
+                    <TextBox x:Name="tbRegDetectionKeyPath" Grid.Row="23" Grid.Column="1" />
+                    <Label x:Name="lRegDetectionValueName" Grid.Row="24" Content="Name of the registry value in which version is stored" />
+                    <TextBox x:Name="tbRegDetectionValueName" Grid.Row="24" Grid.Column="1" />
                 </Grid>
             </TabItem>
         </TabControl>
