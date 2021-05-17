@@ -105,7 +105,7 @@ $psCmd = [PowerShell]::Create().AddScript({
     $syncHash.Window.Title = "AppImport v$($syncHash.Version)"
     $syncHash.cbShouldDeployToTestCollection.Content = "Should Deploy to '$($syncHash.AppTestCollectionName)'"
     #$syncHash.cbShouldDeployToTestCollection.Content = "Should Deploy to '$((Get-SCCMCollectionInfo -SiteServer (Get-Config -key 'SCCMSiteServer') -Namespace (Get-Config -key 'WMINamespace') -CollectionID $syncHash.AppTestCollectionID).Name)'"
-    $syncHash.lTeamsChannelName.Content = $syncHash.TeamsChannelName
+    $syncHash.tbTeamsChannelName.Content = $syncHash.TeamsChannelName
 
     # Populate settings
     $syncHash.cbDefaultDeployToTestCollection.Content = "Deploy to '$($syncHash.AppTestCollectionName)'"

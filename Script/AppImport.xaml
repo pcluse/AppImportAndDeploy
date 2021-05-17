@@ -139,7 +139,7 @@
                     <TextBox x:Name="tbDefaultDestinationFolder" Grid.Row="18" Grid.Column="1" />
                     <Label x:Name="lRequiredCollectionFolder" Grid.Row="19" Content="Path to folder where required applicationscollections end up" />
                     <TextBox x:Name="tbRequiredCollectionFolder" Grid.Row="19" Grid.Column="1" />
-                    <Label x:Name="lRequiredCollectionSuffix" Grid.Row="20" Content="Suffix added to collection name of an required deployment" />
+                    <Label x:Name="lRequiredCollectionSuffix" Grid.Row="20" Content="Suffix added to collection name of a required deployment" />
                     <TextBox x:Name="tbRequiredCollectionSuffix" Grid.Row="20" Grid.Column="1" />
                     <Label x:Name="lAvailableCollectionFolder" Grid.Row="21" Content="Path to folder where optional applicationscollections end up" />
                     <TextBox x:Name="tbAvailableCollectionFolder" Grid.Row="21" Grid.Column="1" />
