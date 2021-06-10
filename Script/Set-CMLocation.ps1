@@ -14,7 +14,7 @@
     # Import the ConfigurationManager.psd1 module 
     if((Get-Module ConfigurationManager) -eq $null) {
         #Write-CMLogEntry -Severity 1 -Value "Import-Module $($ENV:SMS_ADMIN_UI_PATH)\..\ConfigurationManager.psd1"
-        Import-Module -Scope Global "$($ENV:SMS_ADMIN_UI_PATH)\..\ConfigurationManager.psd1" @initParams 
+        Import-Module -Scope Global "$($ENV:SMS_ADMIN_UI_PATH)\..\ConfigurationManager.psd1" -ErrorAction Ignore
     }
 
     # Connect to the site's drive if it is not already present
